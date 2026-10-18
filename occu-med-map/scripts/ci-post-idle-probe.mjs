@@ -1,3 +1,4 @@
+import { enterNetworkMap } from "./enter-network-map.mjs";
 import assert from "node:assert/strict";
 import { chromium, webkit } from "playwright";
 
@@ -125,6 +126,7 @@ await page.route("**/api/**", async (route) => {
 });
 
 await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+await enterNetworkMap(page);
 await page.locator(".app-wrap").waitFor({ state: "visible", timeout: 20_000 });
 await page.waitForFunction(() => Boolean(window.__NETWORK_MAP_MAPBOX_LIFECYCLE__) && document.documentElement.dataset.occumedWorkspaceReady === "true", null, { timeout: 20_000 });
 mark("ready");

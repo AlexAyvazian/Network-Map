@@ -1,3 +1,4 @@
+import { enterNetworkMap } from "./enter-network-map.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -82,6 +83,7 @@ async function mockApi(page) {
 
 async function waitForApplication(page) {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await enterNetworkMap(page);
   await page.locator("#root").waitFor({ state: "attached", timeout: 20_000 });
   await page.locator(".app-wrap").waitFor({ state: "visible", timeout: 20_000 });
   await page.waitForFunction(() => Boolean(window.__NETWORK_MAP_RUNTIME_OWNERSHIP__), null, { timeout: 20_000 });

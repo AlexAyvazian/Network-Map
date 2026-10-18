@@ -1,3 +1,4 @@
+import { enterNetworkMap } from "./enter-network-map.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -126,6 +127,7 @@ try {
       if (!["GET", "HEAD", "OPTIONS"].includes(request.method()) && request.url().includes("/api/")) writes.push(`${request.method()} ${request.url()}`);
     });
     await page.goto(`${baseUrl}/${route}`, { waitUntil: "domcontentloaded", timeout: 45_000 });
+    await enterNetworkMap(page);
     await page.locator(".app-wrap").waitFor({ state: "visible", timeout: 30_000 });
     await page.waitForTimeout(1_500);
     const geometry = await page.evaluate(() => ({ width: Math.max(document.documentElement.scrollWidth, document.body?.scrollWidth || 0), viewport: innerWidth }));

@@ -45,7 +45,8 @@
     "test:large-map-performance": "tsx scripts/large-map-performance-smoke.ts",
     "test:provider-rendering-authority": "tsx scripts/provider-rendering-authority-smoke.ts",
     "test:map-architecture-authority": "tsx scripts/native-map-architecture-audit.ts",
-    "test:healthcare-access-diagnostics": "tsx scripts/healthcare-access-diagnostics-smoke.ts"
+    "test:healthcare-access-diagnostics": "tsx scripts/healthcare-access-diagnostics-smoke.ts",
+    "test:landing-entry": "node scripts/landing-entry-smoke.mjs"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -124,6 +125,9 @@
     "mapbox-gl": "^3.9.2",
     "three": "^0.185.1",
     "topojson-client": "^3.1.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "@react-three/fiber": "^9.8.1",
+    "@react-three/drei": "^10.7.7",
+    "three-globe": "^2.44.0"
   }
 }

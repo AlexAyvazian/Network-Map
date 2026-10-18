@@ -1,3 +1,4 @@
+import { enterNetworkMap } from "./enter-network-map.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
@@ -300,6 +301,7 @@ async function exerciseSyntheticDialog(expectMobile = false) {
 
 try {
   await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
+  await enterNetworkMap(page);
   await page.locator(".mapbox-2d-host .mapboxgl-map").waitFor({ state: "visible", timeout: 45_000 });
   await page.locator(".mapbox-2d-host canvas").first().waitFor({ state: "visible", timeout: 45_000 });
   await page.locator(".occumed-sidebar-workspace-tabs").waitFor({ state: "visible", timeout: 15_000 });

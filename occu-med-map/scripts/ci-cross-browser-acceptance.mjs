@@ -1,3 +1,4 @@
+import { enterNetworkMap } from "./enter-network-map.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -310,6 +311,7 @@ async function runCase(browser, viewport, routeVariant) {
   console.log(`START ${label}`);
   try {
     await page.goto(`${baseUrl}/${routeVariant.suffix}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await enterNetworkMap(page);
     await page.locator("#root").waitFor({ state: "attached", timeout: 20_000 });
     await page.locator(".app-wrap").waitFor({ state: "visible", timeout: 20_000 });
     await waitForRuntimeOwners(page, label);
@@ -318,7 +320,7 @@ async function runCase(browser, viewport, routeVariant) {
     await page.waitForTimeout(700);
 
     await assertNoGeometryFailure(page, `${label}/initial`);
-    for (const workspace of ["Providers", "Map Tools", "Finder", "Explorer", "Providers"]) {
+    for (const workspace of ["Providers", "Map Tools", "Find", "Results", "Providers"]) {
       await assertWorkspace(page, workspace);
       await assertNoGeometryFailure(page, `${label}/${workspace}`);
     }
