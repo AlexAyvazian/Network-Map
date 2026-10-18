@@ -65,6 +65,17 @@ try {
     await page
       .locator(".nm-landing-globe-stage canvas")
       .waitFor({ state: "visible", timeout: 30000 });
+    const landingFonts = await page.evaluate(() => ({
+      body: getComputedStyle(document.body).fontFamily,
+      landing: getComputedStyle(document.querySelector(".nm-landing")).fontFamily,
+      button: getComputedStyle(document.querySelector(".nm-landing-enter")).fontFamily,
+      remoteFonts: document.querySelectorAll('link[href*="fonts.googleapis.com"]').length,
+    }));
+    for (const family of [landingFonts.body, landingFonts.landing, landingFonts.button]) {
+      assert.match(family, /-apple-system/, "Apple system font is preferred");
+      assert.doesNotMatch(family, /Inter|IBM Plex/, "No legacy font override");
+    }
+    assert.equal(landingFonts.remoteFonts, 0, "No remote Google font stylesheet");
     assert.equal(
       await page.locator(".app-wrap").count(),
       0,
@@ -149,6 +160,13 @@ try {
       0,
       "Effect must release its canvas after entry",
     );
+    const legacyFontElements = await page.locator(".app-wrap").evaluate((root) =>
+      [root, ...root.querySelectorAll("*")]
+        .filter((element) => /Inter|IBM Plex/.test(getComputedStyle(element).fontFamily))
+        .map((element) => element.tagName + "." + element.className)
+        .slice(0, 10),
+    );
+    assert.deepEqual(legacyFontElements, [], "Map interface has no legacy font overrides");
     await page.close();
   }
   assert.deepEqual(

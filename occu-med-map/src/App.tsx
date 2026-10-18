@@ -821,24 +821,23 @@ function generateInternationalReportHtml(data:ReportData):string {
   const coords=(data.lat!=null&&data.lng!=null)?`${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}`:'—';
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Location Report — ${data.locName}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Inter',sans-serif;background:#f8fafc;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{font-family:-apple-system, BlinkMacSystemFont, system-ui, sans-serif;background:#f8fafc;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .page{width:780px;margin:0 auto;background:white;min-height:100vh;}
   .header{background:#040c1a;padding:22px 36px;display:flex;justify-content:space-between;align-items:center;}
-  .org-name{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#89d4fe;letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;}
+  .org-name{font-family:ui-monospace, monospace;font-size:9px;color:#89d4fe;letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;}
   .doc-title{font-size:18px;font-weight:700;color:#f0f6ff;}
-  .doc-subtitle{font-size:11px;color:#4a6888;margin-top:3px;font-family:'IBM Plex Mono',monospace;}
-  .doc-date{font-size:10px;color:#3d5478;font-family:'IBM Plex Mono',monospace;letter-spacing:0.5px;text-align:right;}
+  .doc-subtitle{font-size:11px;color:#4a6888;margin-top:3px;font-family:ui-monospace, monospace;}
+  .doc-date{font-size:10px;color:#3d5478;font-family:ui-monospace, monospace;letter-spacing:0.5px;text-align:right;}
   .location-hero{padding:24px 36px 20px;border-bottom:1px solid #e2e8f0;background:linear-gradient(135deg,#f8fafc 0%,#f4f0ff 100%);}
-  .loc-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:2px;margin-bottom:10px;font-weight:600;background:rgba(124,58,237,0.10);color:#6d28d9;border:1px solid rgba(124,58,237,0.28);}
+  .loc-badge{display:inline-block;font-family:ui-monospace, monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:2px;margin-bottom:10px;font-weight:600;background:rgba(124,58,237,0.10);color:#6d28d9;border:1px solid rgba(124,58,237,0.28);}
   .loc-name{font-size:28px;font-weight:700;color:#0f172a;letter-spacing:-0.5px;margin-bottom:4px;}
-  .loc-meta{font-size:12px;color:#64748b;font-family:'IBM Plex Mono',monospace;}
+  .loc-meta{font-size:12px;color:#64748b;font-family:ui-monospace, monospace;}
   .section{padding:20px 36px;border-bottom:1px solid #f1f5f9;}
-  .section-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;}
+  .section-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;font-family:ui-monospace, monospace;margin-bottom:14px;}
   .notice{padding:14px 16px;border-radius:5px;border-left:3px solid #7c3aed;background:rgba(124,58,237,0.06);font-size:12px;line-height:1.7;color:#334155;}
   .footer{padding:16px 36px;background:#f8fafc;border-top:1px solid #e2e8f0;}
-  .footer-brand{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:1.5px;}
+  .footer-brand{font-family:ui-monospace, monospace;font-size:9px;color:#94a3b8;letter-spacing:1.5px;}
   @media print{body{background:white;}.page{width:100%;box-shadow:none;}}
 </style></head><body><div class="page">
   <div class="header">
@@ -896,41 +895,40 @@ function generateReportHtml(data:ReportData,evidence:EvidencePayload|null):strin
   const evidenceLinks=(evidence?.sourceLinks||[]).map(s=>`<li style="margin:2px 0"><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.label}</a></li>`).join('');
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Coverage Assessment — ${locName}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Inter',sans-serif;background:#f8fafc;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{font-family:-apple-system, BlinkMacSystemFont, system-ui, sans-serif;background:#f8fafc;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .page{width:780px;margin:0 auto;background:white;min-height:100vh;}
   .header{background:#040c1a;padding:22px 36px;display:flex;justify-content:space-between;align-items:center;}
-  .org-name{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#3b82f6;letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;}
+  .org-name{font-family:ui-monospace, monospace;font-size:9px;color:#3b82f6;letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;}
   .doc-title{font-size:18px;font-weight:700;color:#f0f6ff;}
-  .doc-subtitle{font-size:11px;color:#4a6888;margin-top:3px;font-family:'IBM Plex Mono',monospace;}
-  .doc-date{font-size:10px;color:#3d5478;font-family:'IBM Plex Mono',monospace;letter-spacing:0.5px;text-align:right;}
-  .doc-id{font-size:9px;color:#2d4060;font-family:'IBM Plex Mono',monospace;margin-top:3px;text-align:right;}
+  .doc-subtitle{font-size:11px;color:#4a6888;margin-top:3px;font-family:ui-monospace, monospace;}
+  .doc-date{font-size:10px;color:#3d5478;font-family:ui-monospace, monospace;letter-spacing:0.5px;text-align:right;}
+  .doc-id{font-size:9px;color:#2d4060;font-family:ui-monospace, monospace;margin-top:3px;text-align:right;}
   .location-hero{padding:24px 36px 20px;border-bottom:1px solid #e2e8f0;background:linear-gradient(135deg,#f8fafc 0%,#f0f7ff 100%);}
-  .loc-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:2px;margin-bottom:10px;font-weight:600;}
+  .loc-badge{display:inline-block;font-family:ui-monospace, monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:2px;margin-bottom:10px;font-weight:600;}
   .loc-name{font-size:28px;font-weight:700;color:#0f172a;letter-spacing:-0.5px;margin-bottom:4px;}
-  .loc-meta{font-size:12px;color:#64748b;font-family:'IBM Plex Mono',monospace;}
-  .priority-flag{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:3px;margin-top:12px;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;}
+  .loc-meta{font-size:12px;color:#64748b;font-family:ui-monospace, monospace;}
+  .priority-flag{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:3px;margin-top:12px;font-size:11px;font-weight:700;font-family:ui-monospace, monospace;letter-spacing:1px;}
   .score-hero{padding:20px 36px;display:flex;gap:24px;align-items:stretch;border-bottom:1px solid #e2e8f0;}
   .score-primary{flex:0 0 180px;padding:18px;border-radius:6px;text-align:center;border:1px solid;}
-  .score-primary-label{font-size:9px;color:#64748b;letter-spacing:1.5px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;}
-  .score-primary-num{font-size:52px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;}
+  .score-primary-label{font-size:9px;color:#64748b;letter-spacing:1.5px;text-transform:uppercase;font-family:ui-monospace, monospace;margin-bottom:8px;}
+  .score-primary-num{font-size:52px;font-weight:700;font-family:ui-monospace, monospace;line-height:1;}
   .score-primary-max{font-size:14px;color:#94a3b8;margin-top:2px;}
   .score-primary-lbl{font-size:13px;font-weight:700;margin-top:6px;}
   .score-meta{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .score-meta-item{padding:12px 14px;background:#f8fafc;border-radius:5px;border:1px solid #e2e8f0;}
-  .score-meta-label{font-size:8.5px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:4px;}
-  .score-meta-value{font-size:18px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#1e293b;}
+  .score-meta-label{font-size:8.5px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;font-family:ui-monospace, monospace;margin-bottom:4px;}
+  .score-meta-value{font-size:18px;font-weight:700;font-family:ui-monospace, monospace;color:#1e293b;}
   .section{padding:20px 36px;border-bottom:1px solid #f1f5f9;}
-  .section-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .section-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;font-family:ui-monospace, monospace;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
   .section-title::after{content:'';flex:1;height:1px;background:#e2e8f0;}
   .rec-box{padding:14px 16px;border-radius:5px;border-left:3px solid;font-size:12px;line-height:1.7;color:#334155;}
   table{width:100%;border-collapse:collapse;}
-  th{text-align:left;font-size:8.5px;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;font-family:'IBM Plex Mono',monospace;padding:0 10px 8px 0;border-bottom:1px solid #e2e8f0;}
+  th{text-align:left;font-size:8.5px;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;font-family:ui-monospace, monospace;padding:0 10px 8px 0;border-bottom:1px solid #e2e8f0;}
   .footer{padding:16px 36px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;}
-  .footer-brand{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:1.5px;}
+  .footer-brand{font-family:ui-monospace, monospace;font-size:9px;color:#94a3b8;letter-spacing:1.5px;}
   .footer-note{font-size:9px;color:#cbd5e1;font-style:italic;}
-  .geo-note{font-size:10px;color:#64748b;padding:8px 12px;background:#f8fafc;border-radius:4px;border:1px solid #e2e8f0;margin-top:8px;font-family:'IBM Plex Mono',monospace;}
+  .geo-note{font-size:10px;color:#64748b;padding:8px 12px;background:#f8fafc;border-radius:4px;border:1px solid #e2e8f0;margin-top:8px;font-family:ui-monospace, monospace;}
   @media print{body{background:white;}.page{width:100%;box-shadow:none;}.no-print{display:none;}}
 </style></head><body><div class="page">
   <div class="header">
@@ -1870,7 +1868,7 @@ export default function App() {
           lineOpacity:style.opacity,
           lineWidth:style.weight,
           popupHtml:authoritative?`<div class="pi"><div class="pt">${postal}</div><div class="ps">Backend healthcare-access score</div><div class="pg"><div><div class="psl">Difficulty</div><div class="psv">${authoritative.score.toFixed(1)} · ${authoritative.label}</div></div><div><div class="psl">Confidence</div><div class="psv">${Math.round(authoritative.confidence*100)}%</div></div><div><div class="psl">Population</div><div class="psv">${authoritative.population.toLocaleString()}</div></div></div></div>`:`<div class="pi"><div class="pt">${escapeHtml(postal)}</div><div class="ps">${backendStateScoreStatus==='loading'?'Loading healthcare-access assessment…':'State assessment unavailable. Open Coverage to assess a city or ZIP.'}</div></div>`,
-          tooltipHtml:authoritative?`<div style="padding:5px 8px;font-family:'IBM Plex Mono',monospace"><span style="font-weight:700;font-size:11px;color:#eef4ff">${postal}</span>&nbsp;<span style="font-size:9px;color:${DCOL[value]};font-weight:700">${authoritative.label}</span></div>`:postal,
+          tooltipHtml:authoritative?`<div style="padding:5px 8px;font-family:ui-monospace, monospace"><span style="font-weight:700;font-size:11px;color:#eef4ff">${postal}</span>&nbsp;<span style="font-size:9px;color:${DCOL[value]};font-weight:700">${authoritative.label}</span></div>`:postal,
         },
       });
       const fallback=featureCenter(feature);
@@ -2021,7 +2019,7 @@ export default function App() {
           lineColor:color,
           lineOpacity:0.6,
           lineWidth:1,
-          tooltipHtml:`<div style="padding:5px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px"><span style="font-weight:700;color:#eef4ff">${postal}</span><span style="color:${color};margin-left:6px;font-weight:700">${densityLabel(pop.density)}</span><br/><span style="color:#67e8f9">${Math.round(pop.density).toLocaleString()}/mi²</span><span style="color:#3d5478;margin-left:6px">${pop.pop.toLocaleString()}</span></div>`,
+          tooltipHtml:`<div style="padding:5px 8px;font-family:ui-monospace, monospace;font-size:10px"><span style="font-weight:700;color:#eef4ff">${postal}</span><span style="color:${color};margin-left:6px;font-weight:700">${densityLabel(pop.density)}</span><br/><span style="color:#67e8f9">${Math.round(pop.density).toLocaleString()}/mi²</span><span style="color:#3d5478;margin-left:6px">${pop.pop.toLocaleString()}</span></div>`,
         },
       }];
     });
@@ -2042,14 +2040,14 @@ export default function App() {
       getColor:(provider:MapInventoryProvider)=>providerCategoryStyle(provider).color,
       buildPopup:(p:MapInventoryProvider)=>{
         const tc=trustColor(p.trustTier);
-        return `<div style="font-family:Inter,sans-serif;padding:10px 12px;min-width:210px;max-width:280px;">
+        return `<div style="font-family:-apple-system, BlinkMacSystemFont, system-ui, sans-serif;padding:10px 12px;min-width:210px;max-width:280px;">
           <div style="font-size:12px;font-weight:700;color:#e2f0ff;margin-bottom:4px">${p.name||'Unnamed'}</div>
           ${p.address?`<div style="font-size:9.5px;color:#4a6888"> ${p.address}${p.city?', '+p.city:''}${p.state?' '+p.state:''}</div>`:''}
           ${p.phone?`<div style="font-size:9.5px;margin-top:2px">Phone: <a href="tel:${p.phone}">${p.phone}</a></div>`:''}
           ${p.website?`<div style="font-size:8.5px;color:#3d5478;margin-top:2px"><a href="${p.website}" target="_blank" rel="noreferrer" style="color:#93c5fd">${p.website}</a></div>`:''}
           ${p.npi?`<div style="font-size:8.5px;color:#3d5478;margin-top:2px">NPI: <a href="https://npiregistry.cms.hhs.gov/provider-view/${p.npi}" target="_blank" rel="noreferrer" style="color:#93c5fd">${p.npi}</a></div>`:''}
           ${p.services.length>0?`<div style="font-size:8px;color:#3d5478;margin-top:3px">${p.services.join(', ')}</div>`:''}
-          <div style="margin-top:6px;display:flex;gap:5px;align-items:center"><span style="font-size:8.5px;color:${tc};font-family:'IBM Plex Mono',monospace;text-transform:uppercase">${p.trustTier}</span>${p.coordinateStatus?`<span style="font-size:7.5px;color:#5d7a9e;margin-left:4px">${p.coordinateStatus}</span>`:''}</div>
+          <div style="margin-top:6px;display:flex;gap:5px;align-items:center"><span style="font-size:8.5px;color:${tc};font-family:ui-monospace, monospace;text-transform:uppercase">${p.trustTier}</span>${p.coordinateStatus?`<span style="font-size:7.5px;color:#5d7a9e;margin-left:4px">${p.coordinateStatus}</span>`:''}</div>
         </div>`;
       },
     });
@@ -2142,7 +2140,7 @@ export default function App() {
           lineColor:info.color,
           lineOpacity:0.7,
           lineWidth:1.2,
-          tooltipHtml:`<div style="padding:5px 8px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:${info.color}">${info.name} Time<br/><span style="font-size:10px;color:#aac">${info.abbr} · ${info.utc}</span></div>`,
+          tooltipHtml:`<div style="padding:5px 8px;font-family:ui-monospace, monospace;font-size:12px;font-weight:700;color:${info.color}">${info.name} Time<br/><span style="font-size:10px;color:#aac">${info.abbr} · ${info.utc}</span></div>`,
         },
       });
       const fallback=featureCenter(feature);
@@ -2350,7 +2348,7 @@ export default function App() {
   function flyToNearer(lat:number,lng:number,name:string,state:string,score:number,examKey:string) {
     flyNativeMap(lat,lng,9,1200);
     drawRadiusCircle(lat,lng);
-    openNativeMapPopup(lat,lng,`<div style="font-family:'Inter',sans-serif;padding:4px 2px"><div style="font-size:13px;font-weight:700;color:#cdd9f0">${escapeHtml(name)}, ${escapeHtml(state)}</div><div style="font-size:10px;color:#3d5478;margin-top:2px">${escapeHtml(MLBL[examKey])}: <span style="color:${DCOL[score]};font-weight:600">${DLBL[score]}</span></div></div>`,'240px');
+    openNativeMapPopup(lat,lng,`<div style="font-family:-apple-system, BlinkMacSystemFont, system-ui, sans-serif;padding:4px 2px"><div style="font-size:13px;font-weight:700;color:#cdd9f0">${escapeHtml(name)}, ${escapeHtml(state)}</div><div style="font-size:10px;color:#3d5478;margin-top:2px">${escapeHtml(MLBL[examKey])}: <span style="color:${DCOL[score]};font-weight:600">${DLBL[score]}</span></div></div>`,'240px');
   }
 
   function pinCity(idx:number) {
@@ -2800,17 +2798,17 @@ export default function App() {
         ? `<div style="margin-top:5px;font-size:8px;color:#eab308;background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.15);border-radius:3px;padding:4px 6px;"><strong>Evidence:</strong> ${p.evidence[0].serviceDetected}</div>`
         : '';
       const confidenceColor=p.confidence==='high'?'#34d399':p.confidence==='medium'?'#fbbf24':'#fca5a5';
-      const popupHtml=`<div style="font-family:Inter,sans-serif;padding:10px 12px;min-width:210px;max-width:280px;">
+      const popupHtml=`<div style="font-family:-apple-system, BlinkMacSystemFont, system-ui, sans-serif;padding:10px 12px;min-width:210px;max-width:280px;">
         <div style="margin-bottom:6px;"><div style="font-size:12px;font-weight:700;color:#e2f0ff;line-height:1.3">${p.name}</div>
-        <div style="font-size:8px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${color};letter-spacing:1px;text-transform:uppercase;margin-top:2px">${label}</div></div>
+        <div style="font-size:8px;font-weight:700;font-family:ui-monospace, monospace;color:${color};letter-spacing:1px;text-transform:uppercase;margin-top:2px">${label}</div></div>
         <div style="font-size:8px;color:#667d8e;margin-bottom:5px;">NPI-listed provider presence. Verify clinic availability before outreach.</div>
         <div style="font-size:9px;color:#4a6888;margin-bottom:4px;">${p.address}</div>
         ${p.phone?`<div style="font-size:9px;margin-bottom:3px;">Phone: <a href="tel:${p.phone}">${p.phone}</a></div>`:''}
         ${p.website?`<div style="font-size:8.5px;color:#3d5478;margin-bottom:3px;"><a href="${p.website}" target="_blank" rel="noopener" style="color:#93c5fd">${p.website}</a></div>`:''}
         ${p.sourceUrl?`<div style="font-size:8px;color:#3d5478;margin-bottom:4px;"><a href="${p.sourceUrl}" target="_blank" rel="noopener">${p.source}</a></div>`:''}
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-          <span style="font-size:8px;font-family:'IBM Plex Mono',monospace;color:${confidenceColor};font-weight:700;">${p.confidence?.toUpperCase()}</span>
-          <span style="font-size:8px;font-family:'IBM Plex Mono',monospace;color:#89d4fe;">Score ${p.score}</span>
+          <span style="font-size:8px;font-family:ui-monospace, monospace;color:${confidenceColor};font-weight:700;">${p.confidence?.toUpperCase()}</span>
+          <span style="font-size:8px;font-family:ui-monospace, monospace;color:#89d4fe;">Score ${p.score}</span>
           ${p.distanceMiles!==undefined?`<span style="font-size:8px;color:#5d7a9e;">${p.distanceMiles.toFixed(1)} mi</span>`:''}
         </div>
         <div style="margin-bottom:4px;">${badgesHtml}</div>
@@ -2826,16 +2824,16 @@ export default function App() {
     const points:NativeLivePoint[]=filtered.slice(0,750).map((r:any)=>{
       const c=CATS[r.cat]||CATS.clinic;
       const gmUrl=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name+(r.addr?' '+r.addr:''))}`;
-      const popupHtml=`<div style="font-family:Inter,sans-serif;padding:10px 12px;min-width:190px;">
+      const popupHtml=`<div style="font-family:-apple-system, BlinkMacSystemFont, system-ui, sans-serif;padding:10px 12px;min-width:190px;">
         <div style="margin-bottom:6px;"><div style="font-size:12.5px;font-weight:700;color:#e2f0ff;line-height:1.3">${r.name}</div>
-        <div style="font-size:8.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${c.col};letter-spacing:1px;text-transform:uppercase;margin-top:2px">${c.lbl}</div></div>
+        <div style="font-size:8.5px;font-weight:700;font-family:ui-monospace, monospace;color:${c.col};letter-spacing:1px;text-transform:uppercase;margin-top:2px">${c.lbl}</div></div>
         ${r.addr?`<div style="font-size:9.5px;color:#4a6888;margin-bottom:3px;"> ${r.addr}</div>`:''}
         ${r.phone?`<div style="font-size:9.5px;margin-bottom:3px;">Phone: <a href="tel:${r.phone}">${r.phone}</a></div>`:''}
         ${r.hours?`<div style="font-size:9px;margin-bottom:5px;">Hours: ${r.hours}</div>`:''}
         <div style="font-size:8.5px;color:#2d3f55;margin-bottom:7px;">~${fmtDist(r.dist)} away</div>
         <div style="display:flex;gap:4px;">
-          <a href="${gmUrl}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:5px;border-radius:3px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#93c5fd;font-size:8.5px;font-family:'IBM Plex Mono',monospace;font-weight:700;text-decoration:none;">GOOGLE MAPS</a>
-          ${r.website?`<a href="${r.website}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:5px;border-radius:3px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);color:#34d399;font-size:8.5px;font-family:'IBM Plex Mono',monospace;font-weight:700;text-decoration:none;">WEBSITE</a>`:''}
+          <a href="${gmUrl}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:5px;border-radius:3px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#93c5fd;font-size:8.5px;font-family:ui-monospace, monospace;font-weight:700;text-decoration:none;">GOOGLE MAPS</a>
+          ${r.website?`<a href="${r.website}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:5px;border-radius:3px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);color:#34d399;font-size:8.5px;font-family:ui-monospace, monospace;font-weight:700;text-decoration:none;">WEBSITE</a>`:''}
         </div></div>`;
       return {id:String(r.id),lat:Number(r.lat),lng:Number(r.lng),color:c.col,popupHtml};
     });
@@ -3874,13 +3872,13 @@ export default function App() {
                   </div>
                 </div>
                 {uploadProgress && (
-                  <div style={{fontSize:9,color:uploadProgress.startsWith('Backend ingest complete')?'#1c8f6d':uploadProgress.startsWith('Error')?'#b42318':'#087f9a',fontFamily:"'IBM Plex Mono',monospace",lineHeight:1.5}}>
+                  <div style={{fontSize:9,color:uploadProgress.startsWith('Backend ingest complete')?'#1c8f6d':uploadProgress.startsWith('Error')?'#b42318':'#087f9a',fontFamily:"ui-monospace, monospace",lineHeight:1.5}}>
                     {uploadProgress}
                   </div>
                 )}
               </div>
 
-              <div style={{fontSize:9,color:'#5a78a0',fontFamily:"'IBM Plex Mono',monospace",lineHeight:1.6,padding:'12px 0'}}>
+              <div style={{fontSize:9,color:'#5a78a0',fontFamily:"ui-monospace, monospace",lineHeight:1.6,padding:'12px 0'}}>
                 Uploads now persist through the backend provider ingest pipeline. Map-ready rows are loaded from Neon through the My Clinics layer; rows without coordinates are staged as needs_geocode and are not lost.
               </div>
             </div>
@@ -3906,7 +3904,7 @@ export default function App() {
                     <div key={i} className="cmp-pin-slot">
                       <div className="cmp-pin-dot" style={{background:DCOL[getVal(p,metric)]}}/>
                       <span className="cmp-pin-name">{p[0]}, {p[1]}</span>
-                      <span style={{fontSize:9,color:DCOL[getVal(p,metric)],fontFamily:'IBM Plex Mono,monospace'}}>{DLBL[getVal(p,metric)]}</span>
+                      <span style={{fontSize:9,color:DCOL[getVal(p,metric)],fontFamily:'ui-monospace, monospace'}}>{DLBL[getVal(p,metric)]}</span>
                       <button className="cmp-pin-rm" onClick={()=>setPinnedCities(prev=>prev.filter((_,j)=>j!==i))}>Close</button>
                     </div>
                   ))}
@@ -3920,11 +3918,11 @@ export default function App() {
                         const dt=i>0?calcDrive(pinnedCities[0][2],pinnedCities[0][3],p[2],p[3]):null;
                         return <th key={i} style={{textAlign:'center',minWidth:140}}>
                           <div style={{fontSize:12,fontWeight:700,color:'#eef4ff'}}>{p[0]}</div>
-                          <div style={{fontSize:9,color:'#3d5478',fontFamily:'IBM Plex Mono,monospace',marginTop:2}}>{p[1]} · {p[4]===1?'Major':p[4]===2?'Mid-Size':'Small'}</div>
-                          <div style={{display:'inline-block',padding:'2px 6px',borderRadius:2,fontSize:8.5,fontWeight:700,fontFamily:'IBM Plex Mono,monospace',marginTop:4,background:`${DCOL[v]}22`,color:DCOL[v],border:`1px solid ${DCOL[v]}44`}}>{DLBL[v]}</div>
-                          {dt&&<div style={{fontSize:9,color:'#1c8f6d',marginTop:4,fontFamily:'IBM Plex Mono,monospace'}}>Drive: {dt.timeStr} · {dt.miles}mi</div>}
+                          <div style={{fontSize:9,color:'#3d5478',fontFamily:'ui-monospace, monospace',marginTop:2}}>{p[1]} · {p[4]===1?'Major':p[4]===2?'Mid-Size':'Small'}</div>
+                          <div style={{display:'inline-block',padding:'2px 6px',borderRadius:2,fontSize:8.5,fontWeight:700,fontFamily:'ui-monospace, monospace',marginTop:4,background:`${DCOL[v]}22`,color:DCOL[v],border:`1px solid ${DCOL[v]}44`}}>{DLBL[v]}</div>
+                          {dt&&<div style={{fontSize:9,color:'#1c8f6d',marginTop:4,fontFamily:'ui-monospace, monospace'}}>Drive: {dt.timeStr} · {dt.miles}mi</div>}
                           <div style={{fontSize:9,color:'#3d5478',marginTop:3}}>{p[16]} prov/100k · ~{p[17]}d</div>
-                          <button onClick={()=>setPinnedCities(prev=>prev.filter((_,j)=>j!==i))} style={{marginTop:5,padding:'2px 8px',background:'transparent',border:'1px solid rgba(255,255,255,0.08)',color:'#3d5478',borderRadius:2,fontSize:8.5,cursor:'pointer',fontFamily:'IBM Plex Mono,monospace'}}>remove</button>
+                          <button onClick={()=>setPinnedCities(prev=>prev.filter((_,j)=>j!==i))} style={{marginTop:5,padding:'2px 8px',background:'transparent',border:'1px solid rgba(255,255,255,0.08)',color:'#3d5478',borderRadius:2,fontSize:8.5,cursor:'pointer',fontFamily:'ui-monospace, monospace'}}>remove</button>
                         </th>;
                       })}
                     </tr></thead>
@@ -3934,7 +3932,7 @@ export default function App() {
                         {pinnedCities.map((p,i)=>{
                           const d=countProvidersInRadius(p[2],p[3],metric);
                           return <td key={i} style={{textAlign:'center',borderTop:'1px solid rgba(6,182,212,0.2)'}}>
-                            <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:14,fontWeight:700,color:'#89d4fe'}}>{d.estProviders}</div>
+                            <div style={{fontFamily:'ui-monospace, monospace',fontSize:14,fontWeight:700,color:'#89d4fe'}}>{d.estProviders}</div>
                             <div style={{fontSize:8.5,color:'#3d5478'}}>{d.citiesInRadius} cities in zone</div>
                           </td>;
                         })}
@@ -3964,11 +3962,11 @@ export default function App() {
       {showPdf&&(
         <div className="pdf-modal-wrap" onClick={()=>setShowPdf(false)}>
           <div className="pdf-toolbar" onClick={e=>e.stopPropagation()}>
-            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:'#087f9a',letterSpacing:2,textTransform:'uppercase'}}>Report Preview</span>
+            <span style={{fontFamily:"ui-monospace, monospace",fontSize:9,color:'#087f9a',letterSpacing:2,textTransform:'uppercase'}}>Report Preview</span>
             <div style={{display:'flex',gap:10}}>
               <button style={{padding:'7px 18px',borderRadius:8,fontSize:9,fontWeight:700,cursor:'pointer',border:'1px solid rgba(8,127,154,.25)',background:'#e5f6f8',color:'#075b72',display:'inline-flex',alignItems:'center',gap:6}} onClick={()=>{const b=new Blob([pdfHtml],{type:'text/html'});const u=URL.createObjectURL(b);window.open(u,'_blank');}}><ExternalLink size={14}/>Open in new tab</button>
               <button style={{padding:'7px 18px',borderRadius:8,fontSize:9,fontWeight:700,cursor:'pointer',border:'1px solid rgba(8,127,154,.25)',background:'#e5f6f8',color:'#075b72',display:'inline-flex',alignItems:'center',gap:6}} onClick={()=>{const b=new Blob([pdfHtml],{type:'text/html'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=pdfDlName;document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},1000);}}><Download size={14}/>Download HTML</button>
-              <button style={{padding:'7px 14px',background:'transparent',color:'#4a6888',border:'1px solid rgba(255,255,255,0.08)',borderRadius:3,fontFamily:"'IBM Plex Mono',monospace",fontSize:9,cursor:'pointer'}} onClick={()=>setShowPdf(false)}>Close</button>
+              <button style={{padding:'7px 14px',background:'transparent',color:'#4a6888',border:'1px solid rgba(255,255,255,0.08)',borderRadius:3,fontFamily:"ui-monospace, monospace",fontSize:9,cursor:'pointer'}} onClick={()=>setShowPdf(false)}>Close</button>
             </div>
           </div>
           <div className="pdf-tip" onClick={e=>e.stopPropagation()}><strong style={{color:'#93c5fd'}}>To save as PDF:</strong> Click "Open in New Tab" → then Ctrl+P / ⌘+P → Save as PDF. Or use "Download HTML" to save the file.</div>
@@ -4108,18 +4106,18 @@ function DriveTimeBox({fromLat,fromLng,fromName,locB}:{fromLat:number;fromLng:nu
 function NearestEasier({items,onFly}:{items:any[];onFly:(lat:number,lng:number,name:string,state:string,score:number,examKey:string)=>void}) {
   return (
     <div style={{marginTop:10}}>
-      <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8.5,color:'#3d5478',letterSpacing:1.5,marginBottom:7}}>NEAREST EASIER CITIES</div>
+      <div style={{fontFamily:"ui-monospace, monospace",fontSize:8.5,color:'#3d5478',letterSpacing:1.5,marginBottom:7}}>NEAREST EASIER CITIES</div>
       {items.map((r,i)=>{
         const col=DCOL[r.v];
         return (
           <div key={i} className="nearer-row" onClick={()=>onFly(r.lat,r.lng,r.name,r.state,r.v,'primaryCare')}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <span style={{fontSize:12,fontWeight:600,color:'#cdd9f0'}}>{r.name}, {r.state}</span>
-              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:'rgba(99,179,237,0.7)'}}>{r.dist} mi</span>
+              <span style={{fontFamily:"ui-monospace, monospace",fontSize:9,color:'rgba(99,179,237,0.7)'}}>{r.dist} mi</span>
             </div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginTop:3}}>
               <span style={{fontSize:9,color:'#3d5478'}}>{r.tier===1?'Major Metro':r.tier===2?'Mid-Size':'Small City'}</span>
-              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:col,fontWeight:600}}>{DLBL[r.v]}</span>
+              <span style={{fontFamily:"ui-monospace, monospace",fontSize:9,color:col,fontWeight:600}}>{DLBL[r.v]}</span>
             </div>
           </div>
         );

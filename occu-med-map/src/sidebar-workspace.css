@@ -555,7 +555,7 @@ html[data-occumed-workspace-ready="true"] body
   --neon-glow-hover:  rgba(209, 220, 229, 0.40);
   --neon-glow-active: rgba(240, 248, 255, 0.62);
   /* Phase 1 font stack (Apple / macOS Tahoe) */
-  --p1-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  --p1-font: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 /* ── App body fills 100% height without the header row ── */
@@ -1062,7 +1062,7 @@ html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspac
   border-radius: 20px !important;
   font-size: 11px;
   font-weight: 700;
-  font-family: var(--p1-font, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif);
+  font-family: var(--p1-font, -apple-system, BlinkMacSystemFont, system-ui, sans-serif);
   letter-spacing: 0.01em;
   color: var(--workspace-text);
   background: var(--workspace-control-bg);

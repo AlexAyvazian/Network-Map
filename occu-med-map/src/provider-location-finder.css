@@ -168,7 +168,7 @@
 .provider-location-popup {
   min-width: 230px;
   color: #132238;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 .provider-location-popup-title {

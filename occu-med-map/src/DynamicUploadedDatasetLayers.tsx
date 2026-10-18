@@ -58,7 +58,7 @@ function popup(provider: any, category: UploadedCategory): string {
   const phone = typeof provider?.phone === 'string' && provider.phone.trim() ? provider.phone.trim() : '';
   const website = safeHttpUrl(provider?.website);
   const type = escapeHtml(provider?.clinic_type || provider?.providerType || provider?.category || '');
-  return `<div style="font-family:Inter,sans-serif;padding:10px 12px;max-width:290px;">
+  return `<div style="font-family:-apple-system, BlinkMacSystemFont, system-ui, sans-serif;padding:10px 12px;max-width:290px;">
     <div style="font-size:12px;font-weight:700;color:#e2f0ff;">${name}</div>
     <div style="font-size:9px;color:#7dd3fc;letter-spacing:.06em;text-transform:uppercase;margin:2px 0 4px;">${escapeHtml(category.label)}</div>
     <div style="font-size:9px;color:#7f9dbb;margin-bottom:5px;">${address}</div>
@@ -246,7 +246,7 @@ export default function DynamicUploadedDatasetLayers() {
   }, []);
 
   return <>
-    <div style={{ margin: '8px 0 4px', fontSize: 8, letterSpacing: '.12em', color: '#64748b', fontFamily: "'IBM Plex Mono',monospace" }}>
+    <div style={{ margin: '8px 0 4px', fontSize: 8, letterSpacing: '.12em', color: '#64748b', fontFamily: "ui-monospace, monospace" }}>
       CUSTOM / UPLOADED DATASETS
     </div>
     <div style={{ margin: '0 0 6px', fontSize: 8, lineHeight: 1.35, color: '#526b89' }}>
