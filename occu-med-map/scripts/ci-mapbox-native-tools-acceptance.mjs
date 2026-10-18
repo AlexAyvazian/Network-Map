@@ -450,7 +450,7 @@ try {
   const radiusPointBefore = await liveFinderSnapshotPoint(page, "drop");
   assert.ok(radiusPointBefore, "Radius center must exist in first-party native overlay state");
 
-  await page.locator(".map-dimension-toggle button[data-map-mode='3d']").evaluate((element) => element.click());
+  await page.locator(".map-dimension-toggle button[data-map-mode='3d']").click();
   await waitForMode(page, "3d");
   await page.locator(".mapbox-globe-host .mapboxgl-canvas").waitFor({ state: "visible", timeout: 15_000 });
   await page.waitForFunction(() => {
@@ -464,7 +464,8 @@ try {
     );
   }, null, { timeout: 10_000 });
   assert.ok(await liveFinderSnapshotFeatureCount(page, "drop") > 0, "3D Mapbox globe must retain the same native radius runtime geometry");
-  await page.locator(".map-dimension-toggle button[data-map-mode='2d']").evaluate((element) => element.click());
+  await page.waitForFunction(() => !document.querySelector(".dual-engine-vortex.active"), null, { timeout: 35_000 });
+  await page.locator(".map-dimension-toggle button[data-map-mode='2d']").click();
   await waitForMode(page, "2d");
   await page.waitForFunction(() => !document.querySelector(".dual-engine-vortex.active"), null, { timeout: 35_000 });
   await radiusCard.waitFor({ state: "visible", timeout: 10_000 });
