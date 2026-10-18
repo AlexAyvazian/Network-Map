@@ -158,7 +158,21 @@ export function MagicRings({ onComplete }: { onComplete: () => void }) {
     let frame = 0;
     const startedAt = performance.now();
     const endTime = 3.45 + 0.2 * (p.ringCount - 1);
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      cancelAnimationFrame(frame);
+      completeRef.current();
+    };
+    // RAF may be suspended in an inactive tab or on a stalled graphics context.
+    // Navigation must complete independently of the decorative renderer.
+    const deadline = window.setTimeout(
+      finish,
+      (endTime / p.speed) * 1000 + 100,
+    );
     const animate = (now: number) => {
+      if (finished) return;
       const elapsed = (now - startedAt) / 1000;
       uniforms.uTime.value = elapsed * p.speed;
       // Time-based click burst: identical timing at every frame rate.
@@ -168,13 +182,15 @@ export function MagicRings({ onComplete }: { onComplete: () => void }) {
         p.noiseAmount * Math.max(0, 1 - uniforms.uTime.value / endTime);
       renderer.render(scene, camera);
       if (uniforms.uTime.value >= endTime) {
-        completeRef.current();
+        finish();
         return;
       }
       frame = requestAnimationFrame(animate);
     };
     frame = requestAnimationFrame(animate);
     return () => {
+      finished = true;
+      window.clearTimeout(deadline);
       cancelAnimationFrame(frame);
       observer.disconnect();
       geometry.dispose();

@@ -17,7 +17,11 @@ const browser = await chromium.launch({
 const baseUrl = process.env.NETWORK_MAP_CI_UI_URL || "http://127.0.0.1:4173";
 const errors = [];
 try {
-  for (const reducedMotion of ["no-preference", "reduce"]) {
+  for (const { reducedMotion, stalledFrames } of [
+    { reducedMotion: "no-preference", stalledFrames: false },
+    { reducedMotion: "reduce", stalledFrames: false },
+    { reducedMotion: "no-preference", stalledFrames: true },
+  ]) {
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
       reducedMotion,
@@ -93,6 +97,11 @@ try {
       geometry.globeGap >= 0 && geometry.globeGap <= 25,
       "Globe must sit close beneath the entry button",
     );
+    if (stalledFrames) {
+      await page.evaluate(() => {
+        window.requestAnimationFrame = () => 0;
+      });
+    }
     await page.getByRole("button", { name: "Enter Map" }).click();
     if (reducedMotion === "no-preference") {
       await page

@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   useRef,
+  useMemo,
   type ReactNode,
 } from "react";
 import { logo } from "./logo";
@@ -131,6 +132,10 @@ export function NetworkMapLanding({ onEnter }: { onEnter: () => void }) {
   const [reducedMotion, setReducedMotion] = useState(
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
+  const activeGlobeConfig = useMemo(
+    () => ({ ...globeConfig, autoRotate: !reducedMotion }),
+    [reducedMotion],
+  );
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const change = () => setReducedMotion(media.matches);
@@ -171,7 +176,7 @@ export function NetworkMapLanding({ onEnter }: { onEnter: () => void }) {
             }
           >
             <World
-              globeConfig={{ ...globeConfig, autoRotate: !reducedMotion }}
+              globeConfig={activeGlobeConfig}
               data={data}
               reducedMotion={reducedMotion}
             />
