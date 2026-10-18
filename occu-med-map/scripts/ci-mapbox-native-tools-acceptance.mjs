@@ -416,6 +416,13 @@ try {
     window.__NETWORK_MAP_PROVIDER_DATASET_NATIVE__?.getSnapshot?.("naccho")?.featureCount === 0
   ), null, { timeout: 10_000 });
 
+  // Nearby intentionally replaces the active radius tool. Select Database first
+  // so the later provider-click ownership check keeps Radius active throughout.
+  await page.getByRole("tab", { name: /^Find workspace\b/ }).click();
+  await page.getByRole("tabpanel", { name: "Find workspace", exact: true })
+    .getByRole("button", { name: "Database", exact: true }).click();
+  await page.getByRole("tab", { name: /^Providers workspace\b/ }).click();
+
   const beforeRadiusFeatures = await liveFinderSnapshotFeatureCount(page, "drop");
   const radiusButton = await clickByText(page, /Radius Tool/i);
   await page.waitForFunction((button) => button.classList.contains("active"), await radiusButton.elementHandle(), { timeout: 5_000 });
@@ -443,7 +450,7 @@ try {
   const radiusPointBefore = await liveFinderSnapshotPoint(page, "drop");
   assert.ok(radiusPointBefore, "Radius center must exist in first-party native overlay state");
 
-  await page.locator(".map-dimension-toggle button[data-map-mode='3d']").evaluate((element) => element.click());
+  await page.locator(".map-dimension-toggle button[data-map-mode='3d']").click();
   await waitForMode(page, "3d");
   await page.locator(".mapbox-globe-host .mapboxgl-canvas").waitFor({ state: "visible", timeout: 15_000 });
   await page.waitForFunction(() => {
@@ -457,7 +464,8 @@ try {
     );
   }, null, { timeout: 10_000 });
   assert.ok(await liveFinderSnapshotFeatureCount(page, "drop") > 0, "3D Mapbox globe must retain the same native radius runtime geometry");
-  await page.locator(".map-dimension-toggle button[data-map-mode='2d']").evaluate((element) => element.click());
+  await page.waitForFunction(() => !document.querySelector(".dual-engine-vortex.active"), null, { timeout: 35_000 });
+  await page.locator(".map-dimension-toggle button[data-map-mode='2d']").click();
   await waitForMode(page, "2d");
   await page.waitForFunction(() => !document.querySelector(".dual-engine-vortex.active"), null, { timeout: 35_000 });
   await radiusCard.waitFor({ state: "visible", timeout: 10_000 });
@@ -468,9 +476,10 @@ try {
   await saveRing.click();
   await radiusCard.getByText(/Ring 1/i).waitFor({ state: "visible", timeout: 5_000 });
 
-  await page.getByRole("tab", { name: /Explorer workspace/i }).click();
-  const explorer = page.locator(".provider-explorer-drawer.open:visible");
+  await page.getByRole("tab", { name: /^Find workspace\b/ }).click();
+  const explorer = page.getByRole("tabpanel", { name: "Find workspace", exact: true });
   await explorer.waitFor({ state: "visible", timeout: 10_000 });
+  await explorer.getByRole("button", { name: "Database", exact: true }).click();
   await clickByText(page, /^Density$/i, explorer);
   await page.locator(".provider-map-status").waitFor({ state: "visible", timeout: 5_000 });
   await page.waitForFunction(() => /density view.*17 matching records.*2 aggregated cells/i.test(document.querySelector(".provider-map-status")?.textContent || ""), null, { timeout: 10_000 });
@@ -518,11 +527,17 @@ try {
   const radiusPointAfterProviderClick = await liveFinderSnapshotPoint(page, "drop");
   assert.deepEqual(radiusPointAfterProviderClick, radiusPointBefore, "Provider clicks must not fall through into Radius map-click ownership");
 
-  await page.getByRole("tab", { name: /Finder workspace/i }).click();
-  await page.locator(".live-panel.open:visible").waitFor({ state: "visible", timeout: 10_000 });
+  await page.getByRole("tab", { name: /^Find workspace\b/ }).click();
+  const find = page.getByRole("tabpanel", { name: "Find workspace", exact: true });
+  await find.getByRole("button", { name: "Nearby", exact: true }).click();
   await mapCanvasClick(page, 0.52, 0.5, true);
-  await page.getByText("CI Live Clinic").first().waitFor({ state: "visible", timeout: 15_000 });
-  await page.waitForFunction(() => /1 facilities from OSM/i.test(document.querySelector(".live-panel.open")?.textContent || ""), null, { timeout: 15_000 });
+  const viewLiveResults = find.getByRole("button", { name: "View 1 results", exact: true });
+  await viewLiveResults.waitFor({ state: "visible", timeout: 15_000 });
+  await viewLiveResults.click();
+  const results = page.getByRole("tabpanel", { name: "Results workspace", exact: true });
+  await results.waitFor({ state: "visible", timeout: 10_000 });
+  await results.getByText("CI Live Clinic", { exact: true }).waitFor({ state: "visible", timeout: 15_000 });
+  assert.equal(await results.locator(".result-card").count(), 1, "The mocked OSM search must produce one Nearby result");
 
   assert.deepEqual(pageErrors, [], `Mapbox native tool acceptance saw page errors: ${pageErrors.join("; ")}`);
   console.log(`Mapbox native tool acceptance passed in ${browserName}: categorized providers, uncapped NACCHO pagination, radius, 2D/3D, density, hex, provider click ownership, and OSM Live Finder.`);
