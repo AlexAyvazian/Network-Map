@@ -71,7 +71,7 @@
   border: 3px solid #ffffff !important;
   border-radius: 999px !important;
   color: #ffffff !important;
-  font: 900 11px/1 Inter, system-ui, sans-serif !important;
+  font: 900 11px/1 -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
   box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.16), 0 8px 18px rgba(15, 23, 42, 0.32) !important;
 }
 

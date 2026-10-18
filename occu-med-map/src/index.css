@@ -108,7 +108,7 @@ html, body, #root {
   overflow: hidden;
   background: var(--bg0);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
 }
@@ -182,11 +182,11 @@ html, body, #root {
   padding: 16px 18px;
   min-width: 250px;
   max-width: 320px;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 .pt { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 2px; letter-spacing: -0.2px; }
 .ps {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 9px;
   font-weight: 600;
   color: var(--muted);
@@ -219,7 +219,7 @@ html, body, #root {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
 }
 .psl { font-size: 8.5px; color: var(--muted); margin-bottom: 2px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-.psv { font-size: 14px; font-weight: 700; font-family: 'Inter', sans-serif; color: var(--text); }
+.psv { font-size: 14px; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif; color: var(--text); }
 .pdiv { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.16), transparent); margin: 10px 0; }
 .pcl { font-size: 8px; font-weight: 700; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 7px; }
 .pcrow { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
@@ -236,7 +236,7 @@ html, body, #root {
   background: linear-gradient(135deg, rgba(var(--cyan-rgb),0.16), rgba(var(--accent-rgb),0.08));
   border: 1px solid rgba(var(--cyan-rgb),0.38);
   color: var(--cyan);
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
@@ -336,7 +336,7 @@ html, body, #root {
 
 .rp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
 .rp-title {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 10px;
   font-weight: 700;
   color: var(--accent);
@@ -373,7 +373,7 @@ html, body, #root {
   border: 1px solid rgba(255,255,255,0.16);
   color: var(--text);
   font-size: 11.5px;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-weight: 500;
   outline: none;
   transition: all 0.16s;
@@ -415,7 +415,7 @@ html, body, #root {
   background: linear-gradient(135deg, rgba(var(--cyan-rgb),0.20), rgba(var(--accent-rgb),0.10));
   border: 1px solid rgba(var(--cyan-rgb),0.42);
   color: var(--cyan);
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
@@ -524,7 +524,7 @@ html, body, #root {
   margin-bottom: 4px;
   outline: none;
   transition: border-color 0.16s;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-weight: 500;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
 }
@@ -564,7 +564,7 @@ html, body, #root {
   border: 1px solid rgba(74,222,128,0.32);
   color: var(--green);
   font-size: 10px;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-weight: 700;
   cursor: pointer;
   letter-spacing: 0.8px;
@@ -606,7 +606,7 @@ html, body, #root {
 .lp-inner::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb),0.18); border-radius: 2px; }
 
 .lp-title {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 10px;
   font-weight: 700;
   color: var(--accent);
@@ -667,7 +667,7 @@ html, body, #root {
 .lp-chip {
   padding: 4px 10px;
   border-radius: 9px;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 9px;
   font-weight: 600;
   background: rgba(255,255,255,0.06);
@@ -721,7 +721,7 @@ html, body, #root {
 
 /* ── HEADER ELEMENTS ── */
 .hdr-brand {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-weight: 800;
   font-size: 13px;
   color: var(--text);
@@ -743,7 +743,7 @@ html, body, #root {
 
 .hdr-stat { text-align: center; flex-shrink: 0; }
 .hdr-stat-v {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 13px;
   font-weight: 800;
   color: var(--text);
@@ -760,7 +760,7 @@ html, body, #root {
   border-radius: 9px;
   cursor: pointer;
   white-space: nowrap;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 9.5px;
   font-weight: 700;
   /* Glass pill */
@@ -829,7 +829,7 @@ html, body, #root {
 }
 .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .modal-title {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 11.5px;
   font-weight: 700;
   color: var(--accent);
@@ -965,7 +965,7 @@ html, body, #root {
   cursor: pointer;
   font-size: 9.5px;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%);
   border: 1px solid rgba(255,255,255,0.18);
   color: var(--text2);
@@ -987,7 +987,7 @@ html, body, #root {
   background: linear-gradient(135deg, rgba(var(--cyan-rgb),0.18), rgba(var(--accent-rgb),0.09));
   border: 1px solid rgba(var(--cyan-rgb),0.38);
   color: var(--cyan);
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
@@ -1015,7 +1015,7 @@ html, body, #root {
     0 4px 20px rgba(0,0,0,0.22);
 }
 .hero-title {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 12px;
   font-weight: 700;
   color: var(--text);
@@ -1143,7 +1143,7 @@ input, select, textarea { -webkit-appearance: none; appearance: none; }
   .sheet-handle-label {
     font-size: 9px;
     color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: ui-monospace, monospace;
     letter-spacing: 0.08em;
   }
   /* Bottom sheet backdrop */
@@ -1169,3 +1169,12 @@ input, select, textarea { -webkit-appearance: none; appearance: none; }
   }
 }
 
+
+/* Apple system fonts on Apple devices; native system fallback elsewhere.
+   https://developer.apple.com/documentation/technologyoverviews/fonts */
+.mapboxgl-map,
+.mapboxgl-ctrl,
+.maplibregl-map,
+.maplibregl-ctrl {
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}

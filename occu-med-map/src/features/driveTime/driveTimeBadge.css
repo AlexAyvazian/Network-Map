@@ -26,7 +26,7 @@
 .provider-eta-badge__metrics span {
   color: #8fb3d8;
   font-size: 9px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: ui-monospace, monospace;
 }
 
 .provider-eta-badge__actions {
