@@ -468,7 +468,7 @@ try {
   await saveRing.click();
   await radiusCard.getByText(/Ring 1/i).waitFor({ state: "visible", timeout: 5_000 });
 
-  await page.getByRole("tab", { name: "Find workspace", exact: true }).click();
+  await page.getByRole("tab", { name: /^Find workspace\b/ }).click();
   const explorer = page.getByRole("tabpanel", { name: "Find workspace", exact: true });
   await explorer.waitFor({ state: "visible", timeout: 10_000 });
   await explorer.getByRole("button", { name: "Database", exact: true }).click();
@@ -519,7 +519,7 @@ try {
   const radiusPointAfterProviderClick = await liveFinderSnapshotPoint(page, "drop");
   assert.deepEqual(radiusPointAfterProviderClick, radiusPointBefore, "Provider clicks must not fall through into Radius map-click ownership");
 
-  await page.getByRole("tab", { name: "Find workspace", exact: true }).click();
+  await page.getByRole("tab", { name: /^Find workspace\b/ }).click();
   const find = page.getByRole("tabpanel", { name: "Find workspace", exact: true });
   await find.getByRole("button", { name: "Nearby", exact: true }).click();
   await mapCanvasClick(page, 0.52, 0.5, true);
