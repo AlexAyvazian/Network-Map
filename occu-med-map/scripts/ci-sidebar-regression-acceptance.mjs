@@ -1,3 +1,4 @@
+import { enterNetworkMap } from "./enter-network-map.mjs";
 import assert from "node:assert/strict";
 import { chromium, webkit } from "playwright";
 
@@ -155,6 +156,7 @@ page.setDefaultTimeout(10_000);
 try {
   await installMocks(page);
   await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await enterNetworkMap(page);
   await page.waitForFunction(() => document.documentElement.dataset.occumedWorkspaceReady === "true", null, { timeout: 20_000 });
   await page.waitForFunction(() => Boolean(window.__NETWORK_MAP_PROVIDER_EXPLORER_INTENT__), null, { timeout: 20_000 });
   await page.waitForTimeout(900);

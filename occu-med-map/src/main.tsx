@@ -15,6 +15,7 @@ import "./providerExplorerRequestStabilityRuntime";
 import "./providerExplorerExplicitVisualizationRuntime";
 import "./features/driveTime/nativeDriveTimeRuntime";
 import App from "./App";
+import { NetworkMapLanding } from "./features/landing/NetworkMapLanding";
 import ProviderLayerRegistryPanel from "./ProviderLayerRegistryPanel";
 import AppErrorBoundary, { ApplicationFailureScreen } from "./AppErrorBoundary";
 import {
@@ -161,7 +162,7 @@ async function boot(): Promise<void> {
   markInitialRenderComplete();
 }
 
-void boot().catch((error) => {
+function handleBootFailure(error: unknown): void {
   recordBootFailure("application-boot", error, true);
   setBootPhase("failed");
   rootElement.setAttribute("aria-busy", "false");
@@ -171,4 +172,21 @@ void boot().catch((error) => {
       message="The application stopped safely before entering a frozen state. Reload to retry the startup sequence."
     />,
   );
-});
+}
+
+function enterMap(): void {
+  rootElement.setAttribute("aria-busy", "true");
+  void boot().catch(handleBootFailure);
+}
+
+// Preview links retain their direct map entry; the normal app opens on the landing page.
+if (phaseTwoPreview) {
+  enterMap();
+} else {
+  root.render(
+    <AppErrorBoundary>
+      <NetworkMapLanding onEnter={enterMap} />
+    </AppErrorBoundary>,
+  );
+  window.requestAnimationFrame(() => { rootElement.setAttribute("aria-busy", "false"); });
+}

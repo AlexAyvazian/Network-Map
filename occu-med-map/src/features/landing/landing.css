@@ -1,0 +1,151 @@
+.nm-landing {
+  color: #fff;
+  background: #000;
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  height: 100%;
+  min-height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  padding: clamp(28px, 4vh, 48px) 20px 0;
+}
+.nm-landing-branding {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.nm-landing-logo {
+  width: clamp(280px, 26vw, 360px);
+  aspect-ratio: 645 / 352;
+  height: auto;
+  display: block;
+  margin: 0 auto 18px;
+}
+.nm-landing h1 {
+  font-size: clamp(40px, 4.7vw, 64px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  text-align: center;
+  margin: 0;
+}
+.nm-landing-globe-stage {
+  width: min(860px, 100vw);
+  --globe-height: min(740px, max(340px, calc(100svh - 400px)));
+  height: var(--globe-height);
+  flex: none;
+  min-height: 340px;
+  position: relative;
+  margin: calc(var(--globe-height) * -0.12 + 14px) auto 0;
+  touch-action: pan-y;
+}
+.nm-landing-globe-stage:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: -12px;
+  border-radius: 50%;
+}
+.nm-landing-globe-stage canvas {
+  display: block;
+  cursor: grab;
+  touch-action: pan-y !important;
+}
+.nm-landing-globe-stage canvas:active {
+  cursor: grabbing;
+}
+.nm-landing-loading {
+  position: absolute;
+  width: 65%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  left: 17.5%;
+  top: 12%;
+  background: radial-gradient(circle at 65% 30%, #061c52, #020618 70%);
+}
+.nm-landing-fallback {
+  color: #a5b4c7;
+  text-align: center;
+  padding-top: 100px;
+}
+@media (max-width: 600px) {
+  .nm-landing {
+    padding: 28px 16px 0;
+  }
+  .nm-landing-logo {
+    width: 260px;
+    margin-bottom: 18px;
+  }
+  .nm-landing h1 {
+    max-width: 360px;
+    font-size: 38px;
+  }
+  .nm-landing-globe-stage {
+    --globe-height: 100vw;
+    width: 100vw;
+    height: var(--globe-height);
+    min-height: 0;
+    margin: calc(var(--globe-height) * -0.12 + 14px) -16px 0;
+  }
+}
+
+.nm-landing-enter {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 12px 24px;
+  border: 1px solid #4358b0;
+  border-radius: 999px;
+  background: #111b41;
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 160ms,
+    border-color 160ms;
+}
+.nm-landing-enter:hover {
+  background: #1a2b65;
+  border-color: #748cff;
+}
+.nm-landing-enter:focus-visible {
+  outline: 2px solid #a5c4ef;
+  outline-offset: 4px;
+}
+.nm-landing-enter:disabled {
+  cursor: default;
+}
+.nm-landing-rings {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+}
+.nm-landing-rings canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.nm-landing *,
+.nm-landing *::before,
+.nm-landing *::after {
+  box-sizing: border-box;
+}

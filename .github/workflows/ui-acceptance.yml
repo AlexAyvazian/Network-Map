@@ -68,6 +68,7 @@ jobs:
             sleep 1
           done
 
+          NETWORK_MAP_CI_UI_URL=http://127.0.0.1:4173 node occu-med-map/scripts/landing-entry-smoke.mjs
           NETWORK_MAP_CI_UI_URL=http://127.0.0.1:4173 node occu-med-map/scripts/ci-ui-acceptance.mjs
 
       - name: Upload UI acceptance artifacts

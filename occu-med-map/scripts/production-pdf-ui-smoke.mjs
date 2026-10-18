@@ -1,3 +1,4 @@
+import { enterNetworkMap } from "./enter-network-map.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
@@ -121,6 +122,7 @@ async function assertPreview(label, mobile = false) {
 
 try {
   await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
+  await enterNetworkMap(page);
   await page.waitForFunction(() => Boolean(window.__NETWORK_MAP_GENERAL_UI__), undefined, { timeout: 15_000 });
   await assertPreview("desktop report preview");
 
