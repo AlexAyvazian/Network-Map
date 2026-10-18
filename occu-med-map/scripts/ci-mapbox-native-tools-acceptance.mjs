@@ -416,6 +416,13 @@ try {
     window.__NETWORK_MAP_PROVIDER_DATASET_NATIVE__?.getSnapshot?.("naccho")?.featureCount === 0
   ), null, { timeout: 10_000 });
 
+  // Nearby intentionally replaces the active radius tool. Select Database first
+  // so the later provider-click ownership check keeps Radius active throughout.
+  await page.getByRole("tab", { name: /^Find workspace\b/ }).click();
+  await page.getByRole("tabpanel", { name: "Find workspace", exact: true })
+    .getByRole("button", { name: "Database", exact: true }).click();
+  await page.getByRole("tab", { name: /^Providers workspace\b/ }).click();
+
   const beforeRadiusFeatures = await liveFinderSnapshotFeatureCount(page, "drop");
   const radiusButton = await clickByText(page, /Radius Tool/i);
   await page.waitForFunction((button) => button.classList.contains("active"), await radiusButton.elementHandle(), { timeout: 5_000 });
