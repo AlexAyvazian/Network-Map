@@ -1,0 +1,52 @@
+.smoothui-glass-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  width: 100%;
+}
+
+.smoothui-glass-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.smoothui-glass-body {
+  position: absolute;
+}
+
+.smoothui-glass-rim,
+.smoothui-glass-inner-ring,
+.smoothui-glass-chromatic-rim,
+.smoothui-glass-bottom-shade {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.smoothui-glass-light-stack {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.smoothui-glass-specular {
+  position: absolute;
+  pointer-events: none;
+}
+
+.smoothui-glass-sweep {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+}
+
+.smoothui-glass-content {
+  position: relative;
+  z-index: 2;
+}
