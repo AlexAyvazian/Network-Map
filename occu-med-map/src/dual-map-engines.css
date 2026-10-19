@@ -103,11 +103,10 @@
   pointer-events: none;
 }
 
-/* Matches the navy-tinted Mapbox Dark land colour so tiles never flash a
-   light backdrop while loading. */
+/* Match the original light Mapbox Streets host background while tiles load. */
 .mapbox-2d-host.ready,
 .mapbox-2d-host.engine-render-ready {
-  background: #0b1a2a;
+  background: #d9effb;
 }
 
 .dual-engine-loading strong {
