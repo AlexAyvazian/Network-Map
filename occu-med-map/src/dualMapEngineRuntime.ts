@@ -95,6 +95,10 @@ export async function initializeDualMapEngines(container: HTMLElement, initial: 
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 4.5 6 4.5 9S15 18 12 21c-3-3-4.5-6-4.5-9S9 6 12 3Z"/></svg>
       <span><strong>3D Globe</strong><small>Mapbox</small></span>
     </button>
+    <button type="button" data-directory-mode="true" aria-pressed="false" title="Open the provider Directory">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H10l2 2h5.5A2.5 2.5 0 0 1 20 7.5v10A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-12Z"/><path d="M8 10h8M8 14h8"/></svg>
+      <span><strong>Directory</strong><small>Neon</small></span>
+    </button>
     <span class="map-dimension-status" aria-live="polite">Loading Mapbox 2D…</span>
   `;
   statusNode = toggleControl.querySelector(".map-dimension-status");
