@@ -428,14 +428,8 @@ async function assertResultsCards(page, viewportName) {
     assert.ok(reach.actionsHit.length >= 3 && reach.actionsHit.every(Boolean), `${viewportName}: every action on the last card must be a real pointer target (${JSON.stringify(reach)})`);
 
     const lastCard = panel.locator(".result-card").last();
-    await lastCard.locator(".result-card-actions button", { hasText: "Save" }).click();
-    assert.equal(await lastCard.evaluate((element) => element.classList.contains("hl")), false, `${viewportName}: Save must not also select the card on the map`);
-    await lastCard.locator(".result-card-select").click();
-    await page.waitForFunction(() => {
-      const cards = document.querySelectorAll("#sidebar-results-panel .result-card");
-      return cards[cards.length - 1]?.classList.contains("hl");
-    }, null, { timeout: 5_000 });
-
+    // Check keyboard order before selecting: selecting opens a map popup
+    // that takes focus once the fly-to finishes.
     await lastCard.locator(".result-card-select").focus();
     await page.keyboard.press("Tab");
     assert.equal(
@@ -443,6 +437,13 @@ async function assertResultsCards(page, viewportName) {
       true,
       `${viewportName}: keyboard focus must move from a card's map-focus control to its actions`,
     );
+    await lastCard.locator(".result-card-actions button", { hasText: "Save" }).click();
+    assert.equal(await lastCard.evaluate((element) => element.classList.contains("hl")), false, `${viewportName}: Save must not also select the card on the map`);
+    await lastCard.locator(".result-card-select").click();
+    await page.waitForFunction(() => {
+      const cards = document.querySelectorAll("#sidebar-results-panel .result-card");
+      return cards[cards.length - 1]?.classList.contains("hl");
+    }, null, { timeout: 5_000 });
   } finally {
     await page.unroute("**/api/live-finder/search**", liveRoute);
   }
