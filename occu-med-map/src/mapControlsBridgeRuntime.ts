@@ -21,7 +21,7 @@ const LABEL_BY_STYLE: Record<BasemapStyle, string> = {
 };
 
 const trackedMaps = new Set<mapboxgl.Map>();
-let selectedStyle: BasemapStyle = "dark-v11";
+let selectedStyle: BasemapStyle = "streets-v12";
 let scanTimer: number | null = null;
 
 function registerMap(instance: mapboxgl.Map): () => void {
