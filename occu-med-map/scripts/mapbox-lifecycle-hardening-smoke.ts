@@ -116,4 +116,10 @@ const sourcePipeline = source("src/mapboxSourcePipelineRuntime.ts");
 assert.match(sourcePipeline, /prototype\.addSource = function pipelineAddSource/, "source pipeline must own Map.prototype.addSource");
 assert.match(sourcePipeline, /prototype\.removeSource = function pipelineRemoveSource/, "source pipeline must own Map.prototype.removeSource");
 
+assert.match(dualEngine, /MAPBOX_2D_STYLE = "mapbox:\/\/styles\/mapbox\/dark-v11"/, "the 2D map must open on the darker basemap");
+assert.match(dualEngine, /attributionControl: true/, "Mapbox attribution must remain enabled");
+assert.match(dualEngine, /showCompass: !is2d/, "the non-rotating 2D map must not show a dead compass control");
+assert.match(dualEngine, /syncWorldCoverMinZoom\(instance\)/, "the 2D world must always cover its host without empty bands");
+assert.match(dualEngine, /if \(!isMapboxDarkStyle\(instance\)\) return;/, "the navy tint must only touch the Mapbox Dark basemap");
+
 console.log("Mapbox map lifecycle hardening smoke test passed for the native runtime architecture.");

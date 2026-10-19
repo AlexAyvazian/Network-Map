@@ -74,7 +74,7 @@ export async function initializeDualMapEngines(container: HTMLElement, initial: 
   mapbox2dHost = document.createElement("div");
   mapbox2dHost.className = "mapbox-2d-host";
   mapbox2dHost.setAttribute("aria-label", "Mapbox two-dimensional map");
-  mapbox2dHost.innerHTML = loadingMarkup("Starting Mapbox 2D map", "Loading the Mapbox streets basemap…");
+  mapbox2dHost.innerHTML = loadingMarkup("Starting Mapbox 2D map", "Loading the Mapbox basemap…");
 
   mapboxGlobeHost = document.createElement("div");
   mapboxGlobeHost.className = "mapbox-globe-host";
@@ -120,7 +120,7 @@ function showMapbox2dError(error: unknown): void {
   mapbox2dHost.innerHTML = `<div class="mapbox-load-error" role="status"><strong>Mapbox 2D map unavailable</strong><small>${escapeHtml(errorMessage(error))}</small><button type="button">Retry Mapbox</button></div>`;
   mapbox2dHost.querySelector("button")?.addEventListener("click", () => {
     if (!mapbox2dHost) return;
-    mapbox2dHost.innerHTML = loadingMarkup("Starting Mapbox 2D map", "Loading the Mapbox streets basemap…");
+    mapbox2dHost.innerHTML = loadingMarkup("Starting Mapbox 2D map", "Loading the Mapbox basemap…");
     setStatus("Retrying Mapbox 2D…", "loading");
     void ensureMapbox2d().then(() => {
       setStatus("Mapbox 2D active");
@@ -281,12 +281,51 @@ async function createMapboxMap(mode: MapMode): Promise<void> {
   throw lastError instanceof Error ? lastError : new Error(`Mapbox ${mode} failed with all configured tokens`);
 }
 
+// The 2D map opens on Mapbox Dark, tinted toward the application's navy
+// palette. Streets, Light, Terrain and Satellite remain available in Map Tools.
+const MAPBOX_2D_STYLE = "mapbox://styles/mapbox/dark-v11";
+const NAVY_BASEMAP_PAINT: ReadonlyArray<[layer: string, property: string, value: string]> = [
+  ["land", "background-color", "#0b1a2a"],
+  ["background", "background-color", "#0b1a2a"],
+  ["water", "fill-color", "#06111e"],
+];
+
+function isMapboxDarkStyle(instance: mapboxgl.Map): boolean {
+  const style = instance.getStyle();
+  return style?.name === "Mapbox Dark" || String(style?.sprite || "").includes("/dark-v11");
+}
+
+// Only recolours base layers that exist in Mapbox Dark; every other style,
+// and every application overlay, is left untouched.
+function applyNavyBasemapTint(instance: mapboxgl.Map): void {
+  try {
+    if (!isMapboxDarkStyle(instance)) return;
+    for (const [layer, property, value] of NAVY_BASEMAP_PAINT) {
+      if (instance.getLayer(layer)) instance.setPaintProperty(layer, property as never, value as never);
+    }
+  } catch (error) {
+    console.warn("Navy basemap tint could not be applied", error);
+  }
+}
+
+// Mercator with world copies disabled leaves empty bands beside the world once
+// the host is wider (or taller) than the world at the current zoom. Keep the
+// minimum zoom high enough that the world always covers the 2D host.
+function syncWorldCoverMinZoom(instance: mapboxgl.Map): void {
+  const container = instance.getContainer();
+  const span = Math.max(container.clientWidth, container.clientHeight);
+  if (!(span > 0)) return;
+  const coverZoom = Math.log2(span / 512);
+  const minZoom = Math.min(4, Math.max(1, Math.ceil(coverZoom * 100) / 100));
+  if (Math.abs(instance.getMinZoom() - minZoom) > 0.005) instance.setMinZoom(minZoom);
+}
+
 async function createMapboxMapWithToken(mode: MapMode, host: HTMLElement, token: string): Promise<void> {
   const is2d = mode === "2d";
   const instance = new mapboxgl.Map({
     container: host,
     accessToken: token,
-    style: is2d ? "mapbox://styles/mapbox/streets-v12" : "mapbox://styles/mapbox/standard",
+    style: is2d ? MAPBOX_2D_STYLE : "mapbox://styles/mapbox/standard",
     projection: is2d ? "mercator" : "globe",
     center: [sharedCamera.lng, sharedCamera.lat],
     zoom: is2d ? sharedCamera.zoom2d : globeZoomFromMapZoom(sharedCamera.zoom2d),
@@ -307,15 +346,23 @@ async function createMapboxMapWithToken(mode: MapMode, host: HTMLElement, token:
 
   try {
     instance.doubleClickZoom.disable();
-    instance.addControl(new mapboxgl.NavigationControl({ visualizePitch: !is2d }), "top-left");
+    // The 2D map cannot rotate, so its compass would be a dead control. Zoom
+    // sits bottom-right, clear of the floating search bar and mobile menu.
+    instance.addControl(new mapboxgl.NavigationControl({ showCompass: !is2d, visualizePitch: !is2d }), is2d ? "bottom-right" : "top-left");
     instance.scrollZoom.setWheelZoomRate(1 / 600);
     instance.scrollZoom.setZoomRate(1 / 180);
 
     if (!is2d) instance.on("style.load", () => configureGlobe(instance));
+    if (is2d) {
+      instance.on("style.load", () => applyNavyBasemapTint(instance));
+      instance.on("resize", () => syncWorldCoverMinZoom(instance));
+      syncWorldCoverMinZoom(instance);
+    }
 
     await waitForMapReady(instance, is2d ? "Mapbox 2D map" : "Mapbox 3D globe");
 
     if (!is2d) configureGlobe(instance);
+    else applyNavyBasemapTint(instance);
     installMapboxInteractions(instance, mode);
     host.classList.add("ready", "engine-render-ready");
     host.querySelectorAll<HTMLElement>(":scope > .dual-engine-loading").forEach((node) => node.remove());

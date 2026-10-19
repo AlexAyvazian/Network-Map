@@ -16,6 +16,7 @@ import {
   Layers3,
   LoaderCircle,
   MapIcon,
+  MapPin,
   Menu,
   Phone,
   Radar,
@@ -529,6 +530,16 @@ function haversine(lat1:number,lng1:number,lat2:number,lng2:number):number {
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 function fmtDist(m:number):string { return m<1000?Math.round(m)+'m':((m/1609.34).toFixed(1)+' mi'); }
+// Describes the database query scope that produced a Results set.
+function databaseScopeLabel(filters:ProviderExplorerFilters):string {
+  if (filters.useMapBounds) return 'Current map view';
+  const lat = Number(filters.lat), lng = Number(filters.lng), radius = Number(filters.radiusMiles);
+  if (filters.lat !== '' && filters.lng !== '' && Number.isFinite(lat) && Number.isFinite(lng)) {
+    return `${Number.isFinite(radius) && radius > 0 ? `Within ${radius} mi of ` : 'Near '}${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+  }
+  const place = [filters.city, filters.admin_area, filters.postal_code, filters.country].filter(Boolean).join(', ');
+  return place || 'All matching database records';
+}
 function estimateCityPopulationByTier(tier:number, state:string) {
   const baseByTier:Record<number, number> = {1:900000, 2:250000, 3:75000, 4:20000};
   const densityFactor = STATE_POP[state]?.density ? Math.max(0.65, Math.min(1.6, STATE_POP[state].density / 250)) : 1;
@@ -1076,6 +1087,10 @@ export default function App() {
   const [resultsSource, setResultsSource] = useState<'nearby'|'npi'|'database'>('nearby');
   const [databaseResults, setDatabaseResults] = useState<ProviderFeature[]>([]);
   const [databaseResultsTotal, setDatabaseResultsTotal] = useState(0);
+  // The search scope that produced each result set, captured when the results
+  // arrive so the Results header never infers a location from provider rows.
+  const [liveSearchRadius, setLiveSearchRadius] = useState<number|null>(null);
+  const [databaseResultsFilters, setDatabaseResultsFilters] = useState<ProviderExplorerFilters|null>(null);
   // U.S.-only coverage diagnostics (population density, state fill, difficulty
   // legend/filter/distribution, 70mi ring). Off by default so the global map
   // stays a clean world viewer. Only shown when explicitly enabled.
@@ -2510,6 +2525,7 @@ export default function App() {
       setLiveSearched(false);
       setLiveMirror('');
       setLiveLocation('');
+      setLiveSearchRadius(null);
       setLiveHint('Choose a location on the map or search for a city to run Live Finder.');
       clearLiveFinderSearchOverlay();
       renderNativeLivePoints([]);
@@ -2528,6 +2544,7 @@ export default function App() {
     lastRadiusRef.current={lat,lng};
     setLiveLocation(selectedLocationLabel || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
     setLiveFinderSearchOverlay({lat,lng}, liveRadius);
+    setLiveSearchRadius(liveRadius);
 
     try {
       const backendParams=new URLSearchParams({
@@ -3071,6 +3088,12 @@ export default function App() {
   const usLayerStatus = showUsDiagnostics ? (rawStateFeaturesRef.current.length ? 'Available' : 'Loading U.S. map data…') : 'Enable U.S. Diagnostics first';
   const activeProviderSourceCount = providerRegistrySummary.active + uploadedRegistrySummary.active;
   const loadedProviderCount = providerRegistrySummary.visible + uploadedRegistrySummary.visible;
+  const resultsLocation: {label:string; place:string; detail?:string} | null =
+    resultsSource === 'database'
+      ? (databaseResultsFilters ? {label:'Database scope', place:databaseScopeLabel(databaseResultsFilters)} : null)
+      : liveLocation
+        ? {label: resultsSource === 'npi' ? 'NPI search near' : 'Results near', place: liveLocation, detail: resultsSource === 'nearby' && liveSearchRadius ? `${liveSearchRadius} mi radius` : undefined}
+        : null;
   const toggleSection = (section:string) => setCollapsedSections(prev=>({...prev,[section]:!prev[section]}));
   const toggleCommandTool = (tool:Exclude<ActiveTool,null>) => {
     setActiveTool(current=>{
@@ -3429,8 +3452,20 @@ export default function App() {
               </div>
             </div>
 
+            {/* Search location that produced the current result set */}
+            {resultsLocation && (
+              <div className="results-location" role="note" aria-label="Search location for these results">
+                <MapPin size={14} aria-hidden="true"/>
+                <span className="results-location-copy">
+                  <span className="results-location-label">{resultsLocation.label}</span>
+                  <strong>{resultsLocation.place}</strong>
+                  {resultsLocation.detail&&<small>{resultsLocation.detail}</small>}
+                </span>
+              </div>
+            )}
+
             {/* Results list */}
-            <div className="results-list">
+            <div className="results-list" aria-label={`${resultsSource === 'npi' ? 'NPI Registry' : resultsSource === 'database' ? 'Database' : 'Nearby'} provider results`}>
               {/* Empty states */}
               {resultsSource === 'nearby' && !liveLoading && liveResults.length === 0 && (
                 <div className="results-empty">
@@ -3461,14 +3496,16 @@ export default function App() {
                 const saveState=savedToMyClinics[saveKey];
                 const saveError=savedToMyClinicsErrors[saveKey];
                 return (
-                  <div key={p.id} className="result-card" onClick={()=>{ showProviderExplorerRowsOnMap([p], providerExplorerFilters); if(p.lat!=null&&p.lng!=null) getActiveMapboxMap()?.flyTo({center:[p.lng,p.lat],zoom:16,duration:700}); }}>
-                    <div className="result-card-header">
-                      <span className="result-card-name">{p.name}</span>
-                      {p.distance_miles!=null && <span className="result-card-dist">{Number(p.distance_miles).toFixed(1)} mi</span>}
-                    </div>
-                    <div className="result-card-addr">{[p.address,p.city,p.admin_area,p.country].filter(Boolean).join(', ') || 'Address unavailable'}</div>
-                    <div className="result-card-type" style={{color:'#A3C5D9'}}>{p.clinic_type || (p.services||[]).join(', ') || p.source}</div>
-                    <div style={{fontSize:8,color:'#2d4060',marginBottom:3}}>{p.source} · {p.source_kind} · {p.trust_tier}</div>
+                  <article key={p.id} className="result-card">
+                    <button type="button" className="result-card-select" aria-label={`Show ${p.name} on the map`} onClick={()=>{ showProviderExplorerRowsOnMap([p], providerExplorerFilters); if(p.lat!=null&&p.lng!=null) getActiveMapboxMap()?.flyTo({center:[p.lng,p.lat],zoom:16,duration:700}); }}>
+                      <span className="result-card-header">
+                        <span className="result-card-name">{p.name}</span>
+                        {p.distance_miles!=null && <span className="result-card-dist">{Number(p.distance_miles).toFixed(1)} mi</span>}
+                      </span>
+                      <span className="result-card-addr">{[p.address,p.city,p.admin_area,p.country].filter(Boolean).join(', ') || 'Address unavailable'}</span>
+                      <span className="result-card-type"><i style={{background:'#A3C5D9'}}/>{p.clinic_type || (p.services||[]).join(', ') || p.source}</span>
+                      <span className="result-card-meta">{p.source} · {p.source_kind} · {p.trust_tier}</span>
+                    </button>
                     <div className="result-card-actions">
                       <button type="button" className="lp-act" disabled={saveState==='saving'||saveState==='saved'} onClick={e=>{e.stopPropagation();void saveLiveResultToMyClinics(p);}}>{saveState==='saving'?'Saving…':saveState==='saved'?'Saved':saveState==='error'?'Retry':'Save'}</button>
                       {p.website&&<a href={p.website} target="_blank" rel="noopener" className="lp-act" onClick={e=>e.stopPropagation()}>Website</a>}
@@ -3476,7 +3513,7 @@ export default function App() {
                       <a href={gm} target="_blank" rel="noopener" className="lp-act" onClick={e=>e.stopPropagation()}>Directions</a>
                     </div>
                     {saveState==='error'&&saveError&&<div className="lp-save-error" role="alert">{saveError}</div>}
-                  </div>
+                  </article>
                 );
               })}
 
@@ -3486,23 +3523,25 @@ export default function App() {
                 const saveKey = providerSaveKey(p);
                 const saveState = savedToMyClinics[saveKey];
                 const saveError = savedToMyClinicsErrors[saveKey];
+                const hasPoint = p.lat!=null&&p.lng!=null;
                 return (
-                  <div key={p.id} className="result-card" onClick={()=>p.lat!=null&&p.lng!=null&&lpFly(p.lat,p.lng,p.id)}>
-                    <div className="result-card-header">
-                      <span className="result-card-icon">{c?.icon}</span>
-                      <span className="result-card-name">{p.name}</span>
-                      {p.distanceMiles !== undefined && <span className="result-card-dist">{p.distanceMiles.toFixed(1)} mi</span>}
-                    </div>
-                    <div className="result-card-addr">{p.city ? `${p.city}, ${p.state} ${p.postalCode}` : p.address}</div>
-                    <div className="result-card-type" style={{color:c?.color}}>{c?.label}</div>
+                  <article key={p.id} className="result-card">
+                    <button type="button" className="result-card-select" disabled={!hasPoint} aria-label={hasPoint?`Show ${p.name} on the map`:`${p.name} has no map location`} onClick={()=>hasPoint&&lpFly(p.lat!,p.lng!,p.id)}>
+                      <span className="result-card-header">
+                        <span className="result-card-name">{p.name}</span>
+                        {p.distanceMiles !== undefined && <span className="result-card-dist">{p.distanceMiles.toFixed(1)} mi</span>}
+                      </span>
+                      <span className="result-card-addr">{p.city ? `${p.city}, ${p.state} ${p.postalCode}` : p.address}</span>
+                      <span className="result-card-type"><i style={{background:c?.color}}/>{c?.icon?`${c.icon} `:''}{c?.label}</span>
+                    </button>
                     <div className="result-card-actions">
                       <button type="button" className="lp-act" disabled={saveState==='saving'||saveState==='saved'} onClick={e=>{e.stopPropagation();void saveLiveResultToMyClinics(p,{isNpi:true,categoryLabel:c?.label});}}>{saveState==='saving'?'Saving…':saveState==='saved'?'Saved':saveState==='error'?'Retry':'Save'}</button>
                       {p.website&&<a href={p.website} target="_blank" rel="noopener" className="lp-act" onClick={e=>e.stopPropagation()}>Website</a>}
                       {p.phone&&<a href={`tel:${p.phone}`} className="lp-act" onClick={e=>e.stopPropagation()}>Call</a>}
-                      {p.lat!=null&&p.lng!=null&&<a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name+(p.address?' '+p.address:''))}`} target="_blank" rel="noopener" className="lp-act" onClick={e=>e.stopPropagation()}>Directions</a>}
+                      {hasPoint&&<a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name+(p.address?' '+p.address:''))}`} target="_blank" rel="noopener" className="lp-act" onClick={e=>e.stopPropagation()}>Directions</a>}
                     </div>
                     {saveState==='error'&&saveError&&<div className="lp-save-error" role="alert">{saveError}</div>}
-                  </div>
+                  </article>
                 );
               })}
 
@@ -3515,14 +3554,15 @@ export default function App() {
                 const saveState=savedToMyClinics[saveKey];
                 const saveError=savedToMyClinicsErrors[saveKey];
                 return (
-                  <div key={r.id} className={`result-card${liveHighlightId===r.id?' hl':''}`} onClick={()=>lpFly(r.lat,r.lng,r.id)}>
-                    <div className="result-card-header">
-                      <span className="result-card-icon">{c.ico}</span>
-                      <span className="result-card-name">{r.name}</span>
-                      <span className="result-card-dist">{fmtDist(r.dist)}</span>
-                    </div>
-                    {r.addr&&<div className="result-card-addr">{r.addr}</div>}
-                    <div className="result-card-type" style={{color:c.col}}>{c.lbl}</div>
+                  <article key={r.id} className={`result-card${liveHighlightId===r.id?' hl':''}`}>
+                    <button type="button" className="result-card-select" aria-label={`Show ${r.name} on the map`} aria-current={liveHighlightId===r.id?'true':undefined} onClick={()=>lpFly(r.lat,r.lng,r.id)}>
+                      <span className="result-card-header">
+                        <span className="result-card-name">{r.name}</span>
+                        <span className="result-card-dist">{fmtDist(r.dist)}</span>
+                      </span>
+                      {r.addr&&<span className="result-card-addr">{r.addr}</span>}
+                      <span className="result-card-type"><i style={{background:c.col}}/>{c.lbl}</span>
+                    </button>
                     {resultEta&&(
                       <ProviderEtaBadge
                         eta={resultEta}
@@ -3537,7 +3577,7 @@ export default function App() {
                       <button type="button" className="lp-act" disabled={saveState==='saving'||saveState==='saved'} onClick={e=>{e.stopPropagation();void saveLiveResultToMyClinics(r);}}>{saveState==='saving'?'Saving…':saveState==='saved'?'Saved':saveState==='error'?'Retry':'Save'}</button>
                     </div>
                     {saveState==='error'&&saveError&&<div className="lp-save-error" role="alert">{saveError}</div>}
-                  </div>
+                  </article>
                 );
               })}
             </div>
@@ -3706,7 +3746,7 @@ export default function App() {
           sharedFilters={providerExplorerFilters}
           onFiltersChange={setProviderExplorerFilters}
           onOpenMatchingInDatabase={(filters)=>{ setProviderExplorerFilters(filters); setShowDatasetBrowser(true); }}
-          onRowsChange={(rows: ProviderFeature[], _filters: ProviderExplorerFilters, total: number)=>{ setDatabaseResults(rows); setDatabaseResultsTotal(total); }}
+          onRowsChange={(rows: ProviderFeature[], filters: ProviderExplorerFilters, total: number)=>{ setDatabaseResults(rows); setDatabaseResultsTotal(total); setDatabaseResultsFilters(filters); }}
         />
 
         {/* ── MAP ── */}

@@ -2,9 +2,10 @@ import mapboxgl from "mapbox-gl";
 import { registerMapboxMapInitializer } from "./mapboxMapLifecycleRuntime";
 import { registerRuntimeOwner, subscribeToSharedDomObserver } from "./runtimeControllerRegistry";
 
-type BasemapStyle = "streets-v12" | "light-v11" | "outdoors-v12" | "satellite-streets-v12";
+type BasemapStyle = "dark-v11" | "streets-v12" | "light-v11" | "outdoors-v12" | "satellite-streets-v12";
 
 const MAPBOX_STYLE_BY_LABEL: Record<string, BasemapStyle> = {
+  dark: "dark-v11",
   streets: "streets-v12",
   light: "light-v11",
   terrain: "outdoors-v12",
@@ -12,6 +13,7 @@ const MAPBOX_STYLE_BY_LABEL: Record<string, BasemapStyle> = {
 };
 
 const LABEL_BY_STYLE: Record<BasemapStyle, string> = {
+  "dark-v11": "Dark",
   "streets-v12": "Streets",
   "light-v11": "Light",
   "outdoors-v12": "Terrain",
@@ -19,7 +21,7 @@ const LABEL_BY_STYLE: Record<BasemapStyle, string> = {
 };
 
 const trackedMaps = new Set<mapboxgl.Map>();
-let selectedStyle: BasemapStyle = "streets-v12";
+let selectedStyle: BasemapStyle = "dark-v11";
 let scanTimer: number | null = null;
 
 function registerMap(instance: mapboxgl.Map): () => void {

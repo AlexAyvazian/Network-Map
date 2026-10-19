@@ -353,6 +353,102 @@ async function assertSidebarControlsInteractive(page, viewportName) {
   assert.equal(await sidebar.evaluate((element) => element.scrollTop), 0, `${viewportName}: sidebar scrolling must remain attached after switching`);
 }
 
+const RESULT_FIXTURE_COUNT = 36;
+
+function liveResultFixtures() {
+  return Array.from({ length: RESULT_FIXTURE_COUNT }, (_, index) => ({
+    id: `ci-result-${index + 1}`,
+    name: `CI Result Clinic ${index + 1} Occupational Health and Urgent Care`,
+    lat: 39.74 + index * 0.003,
+    lng: -104.99 + index * 0.003,
+    cat: index % 3 === 0 ? "hospital" : "clinic",
+    dist: 400 + index * 350,
+    addr: `${100 + index} Main Street, Denver, CO 80202`,
+    phone: "303-555-0100",
+    website: "https://example.com/clinic",
+  }));
+}
+
+// Results must scroll through the final card and its actions, show the search
+// location that produced the set, and keep card actions separate from the
+// card's map-focus control.
+async function assertResultsCards(page, viewportName) {
+  const fixtures = liveResultFixtures();
+  const liveRoute = (route) => json(route, { cacheHit: true, results: fixtures, facets: {} });
+  await page.route("**/api/live-finder/search**", liveRoute);
+  try {
+    if (await page.locator(".sidebar.occumed-sidebar-workspace-scope.mobile-open").count()) {
+      await page.locator(".mobile-sidebar-backdrop").click();
+    }
+    const map = await page.locator(".map-wrap").boundingBox();
+    assert.ok(map, `${viewportName}: map must be measurable before a live search`);
+    await page.mouse.dblclick(map.x + map.width * 0.5, map.y + map.height * 0.6);
+
+    const results = await workspaceButton(page, "Results");
+    await results.click();
+    await assertWorkspaceReady(page, "Results", viewportName);
+    const panel = page.locator("#sidebar-results-panel");
+    await panel.locator(".result-card").nth(fixtures.length - 1).waitFor({ state: "attached", timeout: 15_000 });
+    assert.equal(await panel.locator(".result-card").count(), fixtures.length, `${viewportName}: every Nearby result must render as a card`);
+
+    const location = panel.locator(".results-location");
+    await location.waitFor({ state: "visible", timeout: 5_000 });
+    assert.match((await location.textContent()) || "", /Results near[\s\S]*mi radius/, `${viewportName}: Results must name the selected search location and radius`);
+
+    const nested = await panel.evaluate((element) => element.querySelectorAll(".result-card-select :is(a, button)").length);
+    assert.equal(nested, 0, `${viewportName}: card actions must not be nested inside the map-focus button`);
+
+    const sidebar = page.locator(".sidebar.occumed-sidebar-workspace-scope");
+    await sidebar.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    await page.waitForTimeout(80);
+    const reach = await page.evaluate(() => {
+      const scroller = document.querySelector(".sidebar.occumed-sidebar-workspace-scope");
+      const cards = document.querySelectorAll("#sidebar-results-panel .result-card");
+      const last = cards[cards.length - 1];
+      const actions = Array.from(last?.querySelectorAll(".result-card-actions > *") || []);
+      const bounds = scroller.getBoundingClientRect();
+      const tabs = scroller.querySelector(".occumed-sidebar-workspace-tabs").getBoundingClientRect();
+      const lastRect = last.getBoundingClientRect();
+      return {
+        atEnd: Math.abs(scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop) <= 2,
+        lastTop: lastRect.top,
+        lastBottom: lastRect.bottom,
+        visibleTop: tabs.bottom,
+        visibleBottom: Math.min(bounds.bottom, innerHeight),
+        actionsHit: actions.map((action) => {
+          const rect = action.getBoundingClientRect();
+          const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          return Boolean(hit && (hit === action || action.contains(hit)));
+        }),
+      };
+    });
+    assert.equal(reach.atEnd, true, `${viewportName}: the Results sidebar must scroll to its end`);
+    assert.ok(reach.lastBottom <= reach.visibleBottom + 1, `${viewportName}: the last result card must be fully visible at the end of the scroll (${JSON.stringify(reach)})`);
+    assert.ok(reach.lastTop >= reach.visibleTop - 1, `${viewportName}: the last result card must not hide under the workspace tabs (${JSON.stringify(reach)})`);
+    assert.ok(reach.actionsHit.length >= 3 && reach.actionsHit.every(Boolean), `${viewportName}: every action on the last card must be a real pointer target (${JSON.stringify(reach)})`);
+
+    const lastCard = panel.locator(".result-card").last();
+    // Check keyboard order before selecting: selecting opens a map popup
+    // that takes focus once the fly-to finishes.
+    await lastCard.locator(".result-card-select").focus();
+    await page.keyboard.press("Tab");
+    assert.equal(
+      await page.evaluate(() => Boolean(document.activeElement?.closest("#sidebar-results-panel .result-card:last-child .result-card-actions"))),
+      true,
+      `${viewportName}: keyboard focus must move from a card's map-focus control to its actions`,
+    );
+    await lastCard.locator(".result-card-actions button", { hasText: "Save" }).click();
+    assert.equal(await lastCard.evaluate((element) => element.classList.contains("hl")), false, `${viewportName}: Save must not also select the card on the map`);
+    await lastCard.locator(".result-card-select").click();
+    await page.waitForFunction(() => {
+      const cards = document.querySelectorAll("#sidebar-results-panel .result-card");
+      return cards[cards.length - 1]?.classList.contains("hl");
+    }, null, { timeout: 5_000 });
+  } finally {
+    await page.unroute("**/api/live-finder/search**", liveRoute);
+  }
+}
+
 async function assertRapidSidebarStress(page, viewportName) {
   // Phase-2 visible tabs: Providers | Map Tools | Find | Results
   const sequence = ["Providers", "Map Tools", "Find", "Results", "Providers"];
@@ -478,6 +574,7 @@ async function runViewport(browser, viewport) {
     await assertGeometry(page, viewport.name);
     await assertWorkspaceSwitching(page, viewport.name);
     await assertRapidSidebarStress(page, viewport.name);
+    await assertResultsCards(page, viewport.name);
     if (viewport.name === "desktop") {
       await assertSidebarControlsInteractive(page, viewport.name);
       await assertSidebarResizeStress(page, viewport.name);

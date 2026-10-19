@@ -27,6 +27,7 @@ let etaResultsNode: HTMLDivElement | null = null;
 let latestRankings: RankedPin[] = [];
 
 const basemaps = [
+  { label: "Dark", style: "dark-v11" },
   { label: "Streets", style: "streets-v12" },
   { label: "Light", style: "light-v11" },
   { label: "Terrain", style: "outdoors-v12" },
