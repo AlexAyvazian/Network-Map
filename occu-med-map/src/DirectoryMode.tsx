@@ -1,27 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import GlassCard from "./components/smoothui/GlassCard";
-import DirectorySymbol, { type DirectorySymbolName } from "./DirectorySymbols";
+import "./components/smoothui/glass-card.css";
 import "./directory-mode.css";
 
 type DirectoryCategory = {
-  id: DirectorySymbolName;
+  id: string;
   label: string;
+  icon: string;
 };
 
 const CATEGORIES: DirectoryCategory[] = [
-  { id: "us-providers-facilities", label: "U.S. Providers & Facilities" },
-  { id: "vaccines", label: "Vaccines" },
-  { id: "international-providers-facilities", label: "International Providers & Facilities" },
-  { id: "us-faa-examiners", label: "U.S. FAA Examiners" },
-  { id: "dot-examiners", label: "DOT Examiners" },
-  { id: "audiology", label: "Audiology" },
-  { id: "imaging", label: "Imaging" },
-  { id: "labs", label: "Labs" },
-  { id: "dentists", label: "Dentists" },
-  { id: "urgent-cares", label: "Urgent Cares" },
-  { id: "occupational-health-clinics", label: "Occupational Health Clinics" },
-  { id: "specialists", label: "Specialists" },
+  { id: "us-providers-facilities", label: "U.S. Providers & Facilities", icon: "/directory-icons/us-providers-facilities.svg" },
+  { id: "vaccines", label: "Vaccines", icon: "/directory-icons/vaccines.svg" },
+  { id: "international-providers-facilities", label: "International Providers & Facilities", icon: "/directory-icons/international-providers-facilities.svg" },
+  { id: "us-faa-examiners", label: "U.S. FAA Examiners", icon: "/directory-icons/us-faa-examiners.svg" },
+  { id: "dot-examiners", label: "DOT Examiners", icon: "/directory-icons/dot-examiners.svg" },
+  { id: "audiology", label: "Audiology", icon: "/directory-icons/audiology.svg" },
+  { id: "imaging", label: "Imaging", icon: "/directory-icons/imaging.svg" },
+  { id: "labs", label: "Labs", icon: "/directory-icons/labs.svg" },
+  { id: "dentists", label: "Dentists", icon: "/directory-icons/dentists.svg" },
+  { id: "urgent-cares", label: "Urgent Cares", icon: "/directory-icons/urgent-cares.svg" },
+  { id: "occupational-health-clinics", label: "Occupational Health Clinics", icon: "/directory-icons/occupational-health-clinics.svg" },
+  { id: "specialists", label: "Specialists", icon: "/directory-icons/specialists.svg" },
 ];
 
 function syncDimensionToggle(directoryOpen: boolean) {
@@ -205,7 +206,7 @@ export function DirectoryMode() {
             </div>
 
             <div className="directory-category-grid">
-              {CATEGORIES.map(({ id, label }) => (
+              {CATEGORIES.map(({ id, label, icon }) => (
                 <button
                   type="button"
                   key={id}
@@ -219,16 +220,14 @@ export function DirectoryMode() {
                     )
                   }
                 >
-                  <GlassCard
-                    className="directory-category-glass"
-                    blur={13}
-                    radius={28}
-                    refraction={25}
-                    rimWidth={11}
-                    tint="rgba(8, 27, 53, 0.16)"
-                  >
+                  <GlassCard className="directory-category-glass" radius={28}>
                     <div className="directory-category-card">
-                      <DirectorySymbol name={id} className="directory-category-symbol" />
+                      <img
+                        className="directory-category-symbol"
+                        src={icon}
+                        alt=""
+                        aria-hidden="true"
+                      />
                       <span className="directory-category-label">{label}</span>
                     </div>
                   </GlassCard>
