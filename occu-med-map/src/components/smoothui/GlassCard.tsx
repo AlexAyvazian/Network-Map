@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { motion, useReducedMotion, useSpring } from "framer-motion";
 import {
   type CSSProperties,
@@ -10,7 +11,6 @@ import {
   useId,
   useState,
 } from "react";
-import "./glass-card.css";
 
 const DEFAULT_BLUR = 11;
 const DEFAULT_RADIUS = 26;
@@ -27,8 +27,13 @@ const RIM_SHIFT = 6;
 const CONTENT_PADDING_MIN = 20;
 const CONTENT_PADDING_GAP = 10;
 const INNER_RADIUS_MIN = 6;
+/**
+ * The rim stays nearly sharp. Blur it much past a pixel and the displacement
+ * is smeared away — the bend has to read as a bend, not as more frost.
+ */
 const RIM_BLUR_RATIO = 0.12;
 
+/** Critically damped: light on glass should settle, never wobble. */
 const SPRING = { damping: 34, mass: 0.5, stiffness: 250 } as const;
 const LIFT = { scale: 1.006, y: -3 };
 
@@ -38,8 +43,10 @@ const SWEEP_GRADIENT =
   "linear-gradient(to bottom, oklch(1 0 0 / 0.92), oklch(1 0 0 / 0.22) 55%, transparent)";
 const SWEEP_MASK =
   "linear-gradient(90deg, transparent, oklch(0 0 0) 42%, oklch(0 0 0) 58%, transparent)";
+/** Cyan on one edge, magenta on the other: glass splits light as it bends it. */
 const CHROMATIC_RIM =
   "linear-gradient(125deg, oklch(0.84 0.12 215 / 0.4) 0%, transparent 36%, transparent 64%, oklch(0.78 0.15 340 / 0.34) 100%)";
+/** Polished inner edge, so the rim reads as one thick pane, not a nested box. */
 const BODY_EDGE =
   "inset 0 1px 0 oklch(1 0 0 / 0.22), inset 0 0 0 1px oklch(1 0 0 / 0.07)";
 const BOTTOM_SHADE =
@@ -49,6 +56,10 @@ const INNER_RING =
 const DROP_SHADOW =
   "0 26px 60px -26px oklch(0 0 0 / 0.6), 0 10px 26px -18px oklch(0 0 0 / 0.45)";
 
+/**
+ * Clips a layer to a ring of `width` px along the border box, so the
+ * refractive edge only ever samples the backdrop at the rim.
+ */
 const ringMask = (width: number): CSSProperties => ({
   boxSizing: "border-box",
   maskClip: "content-box, border-box",
@@ -63,16 +74,28 @@ const ringMask = (width: number): CSSProperties => ({
 });
 
 export interface GlassCardProps {
+  /** Backdrop blur strength of the pane body, in px. */
   blur?: number;
+  /** Draws the inset highlight line that reads as the polished inner edge. */
   border?: boolean;
   children: ReactNode;
   className?: string;
+  /** Tracks the pointer for the specular sweep and adds a subtle hover lift. */
   interactive?: boolean;
+  /** Corner radius in px. */
   radius?: number;
+  /**
+   * Displacement strength of the refractive rim, in px. `0` keeps the rim but
+   * removes the bend, which is the honest before/after comparison.
+   */
   refraction?: number;
+  /** Thickness of the refractive rim, in px. Thin rims read as a plain border. */
   rimWidth?: number;
+  /** Casts a layered drop shadow so the pane floats above its backdrop. */
   shadow?: boolean;
+  /** Renders the pointer-tracked specular highlight and top-edge sweep. */
   specular?: boolean;
+  /** Frosted body tint (any valid CSS color). */
   tint?: string;
 }
 
@@ -80,7 +103,7 @@ export default function GlassCard({
   blur = DEFAULT_BLUR,
   border = true,
   children,
-  className = "",
+  className,
   interactive = true,
   radius = DEFAULT_RADIUS,
   refraction = DEFAULT_REFRACTION,
@@ -100,23 +123,32 @@ export default function GlassCard({
   const sweepX = useSpring(0, SPRING);
   const rimX = useSpring(0, SPRING);
   const rimY = useSpring(0, SPRING);
+
   const tracksPointer = interactive && isHoverDevice && !shouldReduceMotion;
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return;
+    }
     const query = window.matchMedia(HOVER_QUERY);
     setIsHoverDevice(query.matches);
-    const onChange = (event: MediaQueryListEvent) => setIsHoverDevice(event.matches);
+    const onChange = (event: MediaQueryListEvent) =>
+      setIsHoverDevice(event.matches);
     query.addEventListener("change", onChange);
     return () => query.removeEventListener("change", onChange);
   }, []);
 
+  // Only Chromium composites an SVG displacement inside `backdrop-filter`.
+  // Everywhere else the rim keeps its blur and drops the bend instead of
+  // invalidating the whole declaration.
   useEffect(() => {
-    if (typeof CSS === "undefined" || typeof CSS.supports !== "function") return;
+    if (typeof CSS === "undefined" || typeof CSS.supports !== "function") {
+      return;
+    }
     const probe = `url(#${filterId}) blur(2px)`;
     setCanDisplace(
       CSS.supports("backdrop-filter", probe) ||
-        CSS.supports("-webkit-backdrop-filter", probe),
+        CSS.supports("-webkit-backdrop-filter", probe)
     );
   }, [filterId]);
 
@@ -131,34 +163,50 @@ export default function GlassCard({
       rimX.set((pointerX / rect.width - 0.5) * RIM_SHIFT);
       rimY.set((pointerY / rect.height - 0.5) * RIM_SHIFT);
     },
-    [rimX, rimY, specularX, specularY, sweepX],
+    [rimX, rimY, specularX, specularY, sweepX]
   );
 
   const handlePointerLeave = useCallback(() => {
-    for (const value of [specularX, specularY, sweepX, rimX, rimY]) value.set(0);
+    for (const value of [specularX, specularY, sweepX, rimX, rimY]) {
+      value.set(0);
+    }
   }, [rimX, rimY, specularX, specularY, sweepX]);
 
   const bodyFilters = `blur(${blur}px) saturate(160%) brightness(1.02)`;
   const rimBlur = Math.max(1, Math.round(blur * RIM_BLUR_RATIO));
   const rimFilters = `blur(${rimBlur}px) saturate(172%) brightness(1.07)`;
   const displaces = refraction > 0 && canDisplace;
-  const rimBackdrop = displaces ? `url(#${filterId}) ${rimFilters}` : rimFilters;
-  const contentPadding = Math.max(CONTENT_PADDING_MIN, rimWidth + CONTENT_PADDING_GAP);
+  const rimBackdrop = displaces
+    ? `url(#${filterId}) ${rimFilters}`
+    : rimFilters;
+  const contentPadding = Math.max(
+    CONTENT_PADDING_MIN,
+    rimWidth + CONTENT_PADDING_GAP
+  );
 
   return (
     <motion.div
-      className={`smoothui-glass-card ${className}`.trim()}
+      className={cn("relative overflow-hidden", className)}
       onPointerLeave={tracksPointer ? handlePointerLeave : undefined}
       onPointerMove={tracksPointer ? handlePointerMove : undefined}
       style={{
         borderRadius: radius,
         boxShadow: shadow ? DROP_SHADOW : undefined,
       }}
-      transition={shouldReduceMotion ? { duration: 0 } : { bounce: 0, duration: 0.3, type: "spring" }}
+      transition={
+        shouldReduceMotion
+          ? { duration: 0 }
+          : { bounce: 0, duration: 0.3, type: "spring" }
+      }
       whileHover={tracksPointer ? LIFT : undefined}
     >
       {displaces ? (
-        <svg aria-hidden="true" className="smoothui-glass-defs" focusable="false">
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute h-0 w-0"
+          focusable="false"
+        >
+          <title>Refractive glass edge</title>
           <defs>
             <filter id={filterId}>
               <feTurbulence
@@ -181,9 +229,10 @@ export default function GlassCard({
         </svg>
       ) : null}
 
+      {/* Frosted body, inset so the rim below samples the raw backdrop. */}
       <div
         aria-hidden="true"
-        className="smoothui-glass-body"
+        className="absolute"
         style={{
           backdropFilter: bodyFilters,
           backgroundColor: tint,
@@ -194,9 +243,10 @@ export default function GlassCard({
         }}
       />
 
+      {/* Refractive rim: the edge that visibly bends what sits behind it. */}
       <div
         aria-hidden="true"
-        className="smoothui-glass-rim"
+        className="absolute inset-0 rounded-[inherit]"
         style={{
           ...ringMask(rimWidth),
           backdropFilter: rimBackdrop,
@@ -204,9 +254,13 @@ export default function GlassCard({
         }}
       />
 
-      <div aria-hidden="true" className="smoothui-glass-light-stack">
+      {/* Light layers, isolated so blending never leaks past the pane. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 isolate overflow-hidden rounded-[inherit]"
+      >
         <motion.div
-          className="smoothui-glass-chromatic-rim"
+          className="absolute inset-0 rounded-[inherit]"
           style={{
             ...ringMask(rimWidth),
             backgroundImage: CHROMATIC_RIM,
@@ -218,7 +272,7 @@ export default function GlassCard({
 
         {specular ? (
           <motion.div
-            className="smoothui-glass-specular"
+            className="absolute"
             style={{
               backgroundImage: SPECULAR_GRADIENT,
               height: SPECULAR_SIZE,
@@ -237,7 +291,7 @@ export default function GlassCard({
 
         {specular ? (
           <motion.div
-            className="smoothui-glass-sweep"
+            className="absolute top-0"
             style={{
               backgroundImage: SWEEP_GRADIENT,
               height: rimWidth + 2,
@@ -252,18 +306,21 @@ export default function GlassCard({
           />
         ) : null}
 
-        <div className="smoothui-glass-bottom-shade" style={{ backgroundImage: BOTTOM_SHADE }} />
+        <div
+          className="absolute inset-0 rounded-[inherit]"
+          style={{ backgroundImage: BOTTOM_SHADE }}
+        />
       </div>
 
       {border ? (
         <div
           aria-hidden="true"
-          className="smoothui-glass-inner-ring"
+          className="pointer-events-none absolute inset-0 rounded-[inherit]"
           style={{ boxShadow: INNER_RING }}
         />
       ) : null}
 
-      <div className="smoothui-glass-content" style={{ padding: contentPadding }}>
+      <div className="relative" style={{ padding: contentPadding }}>
         {children}
       </div>
     </motion.div>
