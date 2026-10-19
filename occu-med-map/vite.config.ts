@@ -33,7 +33,7 @@ function directoryMediaAssets() {
         return next();
       }
 
-      const filename = pathname.replace(/^\\/+/, "");
+      const filename = pathname.startsWith("/") ? pathname.slice(1) : pathname;
       if (!directoryMediaFiles.includes(filename as (typeof directoryMediaFiles)[number])) return next();
 
       const sourcePath = path.join(repositoryVideoDir, filename);
