@@ -1,52 +1,46 @@
-.smoothui-glass-card {
+/* Exact Tailwind utility semantics required by SmoothUI GlassCard.
+   Scoped to Directory cards so enabling them cannot restyle the rest of Network Map. */
+.directory-category-glass.relative {
   position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  width: 100%;
 }
 
-.smoothui-glass-defs {
+.directory-category-glass.overflow-hidden,
+.directory-category-glass .overflow-hidden {
+  overflow: hidden;
+}
+
+.directory-category-glass .pointer-events-none {
+  pointer-events: none;
+}
+
+.directory-category-glass .absolute {
   position: absolute;
-  width: 0;
+}
+
+.directory-category-glass .relative {
+  position: relative;
+}
+
+.directory-category-glass .h-0 {
   height: 0;
-  pointer-events: none;
 }
 
-.smoothui-glass-body {
-  position: absolute;
+.directory-category-glass .w-0 {
+  width: 0;
 }
 
-.smoothui-glass-rim,
-.smoothui-glass-inner-ring,
-.smoothui-glass-chromatic-rim,
-.smoothui-glass-bottom-shade {
-  position: absolute;
+.directory-category-glass .inset-0 {
   inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
 }
 
-.smoothui-glass-light-stack {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  isolation: isolate;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.smoothui-glass-specular {
-  position: absolute;
-  pointer-events: none;
-}
-
-.smoothui-glass-sweep {
-  position: absolute;
+.directory-category-glass .top-0 {
   top: 0;
-  pointer-events: none;
 }
 
-.smoothui-glass-content {
-  position: relative;
-  z-index: 2;
+.directory-category-glass .isolate {
+  isolation: isolate;
+}
+
+.directory-category-glass .rounded-\[inherit\] {
+  border-radius: inherit;
 }
