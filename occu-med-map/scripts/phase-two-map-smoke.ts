@@ -127,7 +127,7 @@ assert.match(main, /import\("\.\/PhaseTwoShell"\)/);
 assert.match(main, /import ProviderLayerRegistryPanel from ["']\.\/ProviderLayerRegistryPanel["']/);
 assert.doesNotMatch(main, /phaseTwoLegacyLayerBridge/);
 assert.match(main, /function renderStandardApplication\(\): void/);
-assert.match(main, /<AppErrorBoundary>\s*<>\s*<App \/>\s*<DirectoryMode \/>\s*<ProviderLayerRegistryPanel \/>\s*<\/>\s*<\/AppErrorBoundary>/);
+assert.match(main, /<AppErrorBoundary>\s*<>\s*<App \/>\s*<ProviderLayerRegistryPanel \/>\s*<\/>\s*<\/AppErrorBoundary>/);
 assert.match(main, /<AppErrorBoundary>\s*<PhaseTwoShell>\s*<App \/>\s*<ProviderLayerRegistryPanel \/>\s*<\/PhaseTwoShell>\s*<\/AppErrorBoundary>/);
 assert.match(main, /catch \(error\) \{[\s\S]*recordBootFailure\("phase-two-preview"[\s\S]*renderStandardApplication\(\);/);
 
