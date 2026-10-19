@@ -79,9 +79,9 @@
   place-content: center;
   justify-items: center;
   gap: 8px;
-  color: #123047;
+  color: #e6f8ff;
   background:
-    radial-gradient(circle at 50% 48%, rgba(255,255,255,.96), rgba(226,244,252,.86) 42%, rgba(186,224,241,.78));
+    radial-gradient(circle at 50% 48%, rgba(24,62,92,.92), rgba(9,24,40,.97) 48%, #050d16 100%);
   text-align: center;
   z-index: 6;
 }
@@ -103,9 +103,11 @@
   pointer-events: none;
 }
 
+/* Matches the navy-tinted Mapbox Dark land colour so tiles never flash a
+   light backdrop while loading. */
 .mapbox-2d-host.ready,
 .mapbox-2d-host.engine-render-ready {
-  background: #d9effb;
+  background: #0b1a2a;
 }
 
 .dual-engine-loading strong {
@@ -144,10 +146,10 @@
   grid-template-columns: auto auto;
   gap: 5px;
   padding: 5px;
-  border: 1px solid rgba(255,255,255,.82);
+  border: 1px solid rgba(163,197,217,.34);
   border-radius: 14px;
-  background: rgba(247,252,255,.78);
-  box-shadow: 0 12px 35px rgba(20,65,91,.16), inset 0 0 0 1px rgba(54,116,145,.09);
+  background: rgba(5,14,26,.72);
+  box-shadow: 0 8px 28px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
   backdrop-filter: blur(18px) saturate(145%);
   -webkit-backdrop-filter: blur(18px) saturate(145%);
 }
@@ -161,22 +163,26 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #426074;
+  color: #9fb7c5;
   background: transparent;
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .map-dimension-toggle button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  color: #15374c;
-  background: rgba(255,255,255,.62);
+  color: #f0f8ff;
+  background: rgba(163,197,217,.12);
 }
 
 .map-dimension-toggle button.active {
-  color: #0d425c;
-  background: rgba(255,255,255,.94);
-  box-shadow: 0 5px 16px rgba(15,76,105,.14), inset 0 0 0 1px rgba(26,111,148,.18);
+  color: #f0f8ff;
+  background: rgba(16,52,78,.92);
+  box-shadow: inset 0 0 0 1px rgba(103,198,235,.42);
+}
+
+.map-dimension-toggle button:focus-visible {
+  outline: 2px solid #67c6eb;
+  outline-offset: 1px;
 }
 
 .map-dimension-toggle button:disabled {
@@ -221,14 +227,49 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #587184;
+  color: #9fb7c5;
   font-size: 8px;
   font-weight: 700;
   letter-spacing: .02em;
 }
 
-.map-dimension-status[data-state="error"] { color: #b42318; }
-.map-dimension-status[data-state="loading"] { color: #036b86; }
+/* "Mapbox 2D active" is routine; keep it for screen readers only and show
+   the line again for loading and error states. */
+.map-dimension-status[data-state="normal"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.map-dimension-status[data-state="error"] { color: #fca5a5; }
+.map-dimension-status[data-state="loading"] { color: #89d4fe; }
+
+/* 2D zoom control: dark glass to match the search bar and dimension toggle. */
+.mapbox-2d-host .mapboxgl-ctrl-group {
+  overflow: hidden;
+  border: 1px solid rgba(163,197,217,.34);
+  border-radius: 12px;
+  background: rgba(5,14,26,.78);
+  box-shadow: 0 8px 22px rgba(0,0,0,.32);
+}
+
+.mapbox-2d-host .mapboxgl-ctrl-group button + button {
+  border-top-color: rgba(163,197,217,.2);
+}
+
+.mapbox-2d-host .mapboxgl-ctrl button .mapboxgl-ctrl-icon {
+  filter: invert(1) brightness(1.4);
+}
+
+.mapbox-2d-host .mapboxgl-ctrl-group button:not(:disabled):hover {
+  background-color: rgba(163,197,217,.14);
+}
 
 .mapbox-globe-host .mapboxgl-ctrl-top-left {
   top: 12px;
@@ -248,8 +289,10 @@
   filter: invert(1) brightness(1.55);
 }
 
-@media (max-width: 760px) {
-  .map-dimension-toggle { top: 10px; right: 10px; }
+/* On phones the search bar spans the map's width, so the dimension toggle
+   sits directly beneath it instead of behind it. */
+@media (max-width: 768px) {
+  .map-dimension-toggle { top: 64px; right: 10px; }
   .map-dimension-toggle button small,
   .map-dimension-status { display: none; }
   .map-dimension-toggle button { min-height: 34px; padding: 6px 9px; }

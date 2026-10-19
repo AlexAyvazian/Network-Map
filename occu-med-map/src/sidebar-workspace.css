@@ -106,7 +106,9 @@ html[data-occumed-workspace-ready="true"] body .app-wrap .app-body .sidebar.occu
   > .occumed-sidebar-workspace-tabs {
   box-sizing: border-box !important;
   position: sticky !important;
-  top: 0 !important;
+  /* Pin flush with the sidebar's padding edge so scrolled cards never show
+     through the gap above the tabs. */
+  top: -10px !important;
   z-index: var(--workspace-layer-tabs) !important;
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -119,7 +121,9 @@ html[data-occumed-workspace-ready="true"] body .app-wrap .app-body .sidebar.occu
   background: #061421 !important;
   border: 1px solid rgba(72, 139, 174, 0.44) !important;
   border-radius: 13px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 8px 22px rgba(0,0,0,.24) !important;
+  /* The offset solid shadow paints the sidebar colour into the strip above
+     the pinned tabs. */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 -10px 0 0 #07111d, 0 8px 22px rgba(0,0,0,.24) !important;
   backdrop-filter: blur(18px) saturate(140%) !important;
 }
 
@@ -360,7 +364,7 @@ html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspac
   .lp-chip,
   .provider-explorer-launch,
   .diagnostics-toggle
-):not(.command-section-toggle):not(.command-search-clear):not(.mobile-menu-button):not(.occumed-sidebar-workspace-tab):not(.rp-close) {
+):not(.command-section-toggle):not(.command-search-clear):not(.mobile-menu-button):not(.occumed-sidebar-workspace-tab):not(.rp-close):not(.result-card-select) {
   box-sizing: border-box !important;
   min-height: 36px !important;
   color: var(--workspace-text) !important;
@@ -384,7 +388,7 @@ html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspac
   .lp-chip,
   .provider-explorer-launch,
   .diagnostics-toggle
-):not(.command-section-toggle):not(.command-search-clear):not(.mobile-menu-button):not(.occumed-sidebar-workspace-tab):not(.rp-close):hover:not(:disabled) {
+):not(.command-section-toggle):not(.command-search-clear):not(.mobile-menu-button):not(.occumed-sidebar-workspace-tab):not(.rp-close):not(.result-card-select):hover:not(:disabled) {
   color: #ffffff !important;
   background: var(--workspace-control-hover) !important;
   border-color: var(--workspace-border-strong) !important;
@@ -1186,25 +1190,78 @@ html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspac
   cursor: not-allowed;
 }
 
+/* ─── Search location that produced the result set ─── */
+.results-location {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 9px 11px;
+  color: #89d4fe;
+  background: rgba(10, 41, 64, 0.55);
+  border: 1px solid rgba(103, 198, 235, 0.28);
+  border-radius: 12px;
+}
+
+.results-location > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.results-location-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.results-location-label {
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--workspace-muted);
+}
+
+.results-location strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--workspace-text);
+  overflow-wrap: anywhere;
+}
+
+.results-location small {
+  font-size: 10px;
+  color: #7fb4cf;
+}
+
 /* ─── Results list ─── */
 .results-list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
+  /* The sidebar is the scroll owner; leave room so the last card's actions
+     clear the rounded sidebar edge when scrolled to the end. */
+  padding-bottom: 12px;
 }
 
-/* ─── Individual result card ─── */
+/* ─── Individual result card ───
+   The card is a plain container. Map focus lives on a native button that
+   wraps only the summary, so action links and buttons are siblings rather
+   than nested inside a clickable wrapper. */
 .result-card {
   box-sizing: border-box;
-  padding: 10px;
+  display: grid;
+  gap: 8px;
+  padding: 11px 12px 12px;
   background: var(--workspace-card-bg);
   border: 1px solid rgba(72, 139, 174, 0.24);
   border-radius: 12px;
-  cursor: pointer;
-  transition: border-color 100ms, box-shadow 100ms;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.result-card:hover {
+.result-card:hover,
+.result-card:focus-within {
   border-color: rgba(103, 198, 235, 0.48);
   box-shadow: 0 0 14px rgba(40, 125, 164, 0.14);
 }
@@ -1214,52 +1271,110 @@ html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspac
   box-shadow: 0 0 18px rgba(40, 160, 210, 0.22) !important;
 }
 
+html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspace-scope .result-card-select {
+  appearance: none;
+  box-sizing: border-box;
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 8px;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspace-scope .result-card-select:disabled {
+  cursor: default;
+}
+
+html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspace-scope .result-card-select:focus-visible {
+  outline: 2px solid #67c6eb;
+  outline-offset: 4px;
+}
+
 .result-card-header {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  margin-bottom: 3px;
-}
-
-.result-card-icon {
-  font-size: 13px;
-  flex: 0 0 auto;
+  gap: 8px;
 }
 
 .result-card-name {
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
   color: var(--workspace-text);
   flex: 1 1 0;
   overflow-wrap: anywhere;
 }
 
 .result-card-dist {
-  font-size: 9px;
+  font-size: 10.5px;
+  font-weight: 650;
   color: #89d4fe;
   font-family: var(--p1-font);
+  font-variant-numeric: tabular-nums;
   flex: 0 0 auto;
   white-space: nowrap;
 }
 
 .result-card-addr {
-  font-size: 9px;
-  color: #4a6888;
-  margin-bottom: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #93adbf;
   overflow-wrap: anywhere;
 }
 
 .result-card-type {
-  font-size: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 10.5px;
   font-weight: 600;
-  margin-bottom: 4px;
+  color: #c7dbe7;
+}
+
+.result-card-type > i {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.result-card-meta {
+  font-size: 9.5px;
+  color: #6f8ba0;
+  overflow-wrap: anywhere;
 }
 
 .result-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 5px;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Action links and the Save button share one size and baseline, and share
+   the row evenly so a wrapped action never sits alone at a different size. */
+html[data-occumed-workspace-ready="true"] body .sidebar.occumed-sidebar-workspace-scope .result-card-actions > .lp-act {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  flex: 1 1 auto !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  text-decoration: none !important;
 }
 
 /* ─── Empty / loading states for Results ─── */
