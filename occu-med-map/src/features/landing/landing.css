@@ -1,4 +1,6 @@
 .nm-landing {
+  position: relative;
+  isolation: isolate;
   color: #fff;
   background: #000;
   font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -11,6 +13,15 @@
   overflow: hidden;
   padding: clamp(28px, 4vh, 48px) 20px 0;
 }
+/* Match the Service Map Atlas landing: sparse, static stars behind all entrance content. */
+.nm-landing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url("./stars.svg") center top / 1440px 1000px repeat;
+}
 .nm-landing-branding {
   width: 100%;
   display: flex;
@@ -20,7 +31,7 @@
   z-index: 1;
 }
 .nm-landing-logo {
-  width: clamp(280px, 26vw, 360px);
+  width: clamp(220px, 20vw, 270px);
   aspect-ratio: 645 / 352;
   height: auto;
   display: block;
