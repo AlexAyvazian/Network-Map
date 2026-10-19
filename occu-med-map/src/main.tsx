@@ -15,6 +15,7 @@ import "./providerExplorerRequestStabilityRuntime";
 import "./providerExplorerExplicitVisualizationRuntime";
 import "./features/driveTime/nativeDriveTimeRuntime";
 import App from "./App";
+import DirectoryMode from "./DirectoryMode";
 import { NetworkMapLanding } from "./features/landing/NetworkMapLanding";
 import ProviderLayerRegistryPanel from "./ProviderLayerRegistryPanel";
 import AppErrorBoundary, { ApplicationFailureScreen } from "./AppErrorBoundary";
@@ -71,11 +72,26 @@ async function loadOptionalRuntimes(): Promise<void> {
 function installMapModeSwitching(): void {
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
+
+    const directoryButton = target?.closest<HTMLButtonElement>(".map-dimension-toggle button[data-directory-mode]");
+    if (directoryButton && !directoryButton.disabled) {
+      event.preventDefault();
+      if (
+        document.body.classList.contains("directory-mode-open") ||
+        document.body.classList.contains("directory-mode-transitioning")
+      ) {
+        return;
+      }
+      window.dispatchEvent(new CustomEvent("network-map:directory-open"));
+      return;
+    }
     const button = target?.closest<HTMLButtonElement>(".map-dimension-toggle button[data-map-mode]");
     if (!button || button.disabled) return;
 
     const control = button.closest<HTMLElement>(".map-dimension-toggle");
     if (!control || !window.__NETWORK_MAP_GLOBE__) return;
+
+    window.dispatchEvent(new CustomEvent("network-map:directory-close"));
 
     const mode = button.dataset.mapMode === "3d" ? "3d" : "2d";
     if (window.__NETWORK_MAP_GLOBE__.getMode() === mode) return;
@@ -118,6 +134,7 @@ function renderStandardApplication(): void {
     <AppErrorBoundary>
       <>
         <App />
+        <DirectoryMode />
         <ProviderLayerRegistryPanel />
       </>
     </AppErrorBoundary>,
