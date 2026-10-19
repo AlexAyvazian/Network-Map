@@ -213,52 +213,24 @@ body.directory-mode-transitioning {
 .directory-category-glass {
   width: 100%;
   min-height: 188px;
-  background: transparent;
-}
-
-.directory-category-button-shell:hover .directory-category-glass {
-  filter: drop-shadow(0 18px 34px rgba(2, 12, 32, 0.26));
 }
 
 .directory-category-card {
-  position: relative;
   display: grid;
+  min-height: 144px;
   place-items: center;
   align-content: center;
-  min-height: 144px;
   text-align: center;
 }
 
-.directory-category-card::before {
-  content: "";
-  position: absolute;
-  width: 136px;
-  height: 98px;
-  left: 50%;
-  top: 6px;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(158, 206, 255, 0.16), transparent 72%);
-  filter: blur(16px);
-  pointer-events: none;
-}
-
 .directory-category-symbol {
-  position: relative;
-  z-index: 1;
   display: block;
-  width: 88px;
-  height: 88px;
-  margin: 0 auto 11px;
-  overflow: visible;
-  transition: transform 220ms cubic-bezier(.2,.72,.2,1), filter 220ms ease;
-}
-
-.directory-category-button-shell:hover .directory-category-symbol {
-  transform: translateY(-2px) scale(1.035);
-  filter:
-    drop-shadow(0 2px 1px rgba(255,255,255,0.18))
-    drop-shadow(0 0 15px rgba(169, 209, 255, 0.28));
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 14px;
+  object-fit: contain;
+  filter: grayscale(1) invert(1) brightness(1.14);
+  opacity: 0.96;
 }
 
 .directory-category-label {
