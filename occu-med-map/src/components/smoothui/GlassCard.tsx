@@ -1,13 +1,5 @@
 "use client";
 
-/*
- * SmoothUI Glass Card
- * Source: https://github.com/educlopez/smoothui/tree/main/packages/smoothui/components/glass-card
- * MIT licensed. The only integration change is importing Motion APIs from the
- * project's existing framer-motion dependency instead of motion/react.
- */
-
-import { cn } from "@/lib/utils";
 import { motion, useReducedMotion, useSpring } from "framer-motion";
 import {
   type CSSProperties,
@@ -18,6 +10,7 @@ import {
   useId,
   useState,
 } from "react";
+import "./glass-card.css";
 
 const DEFAULT_BLUR = 11;
 const DEFAULT_RADIUS = 26;
@@ -87,7 +80,7 @@ export default function GlassCard({
   blur = DEFAULT_BLUR,
   border = true,
   children,
-  className,
+  className = "",
   interactive = true,
   radius = DEFAULT_RADIUS,
   refraction = DEFAULT_REFRACTION,
@@ -107,7 +100,6 @@ export default function GlassCard({
   const sweepX = useSpring(0, SPRING);
   const rimX = useSpring(0, SPRING);
   const rimY = useSpring(0, SPRING);
-
   const tracksPointer = interactive && isHoverDevice && !shouldReduceMotion;
 
   useEffect(() => {
@@ -155,27 +147,18 @@ export default function GlassCard({
 
   return (
     <motion.div
-      className={cn("relative overflow-hidden", className)}
+      className={`smoothui-glass-card ${className}`.trim()}
       onPointerLeave={tracksPointer ? handlePointerLeave : undefined}
       onPointerMove={tracksPointer ? handlePointerMove : undefined}
       style={{
         borderRadius: radius,
         boxShadow: shadow ? DROP_SHADOW : undefined,
       }}
-      transition={
-        shouldReduceMotion
-          ? { duration: 0 }
-          : { bounce: 0, duration: 0.3, type: "spring" }
-      }
+      transition={shouldReduceMotion ? { duration: 0 } : { bounce: 0, duration: 0.3, type: "spring" }}
       whileHover={tracksPointer ? LIFT : undefined}
     >
       {displaces ? (
-        <svg
-          aria-hidden="true"
-          className="pointer-events-none absolute h-0 w-0"
-          focusable="false"
-        >
-          <title>Refractive glass edge</title>
+        <svg aria-hidden="true" className="smoothui-glass-defs" focusable="false">
           <defs>
             <filter id={filterId}>
               <feTurbulence
@@ -200,7 +183,7 @@ export default function GlassCard({
 
       <div
         aria-hidden="true"
-        className="absolute"
+        className="smoothui-glass-body"
         style={{
           backdropFilter: bodyFilters,
           backgroundColor: tint,
@@ -213,7 +196,7 @@ export default function GlassCard({
 
       <div
         aria-hidden="true"
-        className="absolute inset-0 rounded-[inherit]"
+        className="smoothui-glass-rim"
         style={{
           ...ringMask(rimWidth),
           backdropFilter: rimBackdrop,
@@ -221,12 +204,9 @@ export default function GlassCard({
         }}
       />
 
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 isolate overflow-hidden rounded-[inherit]"
-      >
+      <div aria-hidden="true" className="smoothui-glass-light-stack">
         <motion.div
-          className="absolute inset-0 rounded-[inherit]"
+          className="smoothui-glass-chromatic-rim"
           style={{
             ...ringMask(rimWidth),
             backgroundImage: CHROMATIC_RIM,
@@ -238,7 +218,7 @@ export default function GlassCard({
 
         {specular ? (
           <motion.div
-            className="absolute"
+            className="smoothui-glass-specular"
             style={{
               backgroundImage: SPECULAR_GRADIENT,
               height: SPECULAR_SIZE,
@@ -257,7 +237,7 @@ export default function GlassCard({
 
         {specular ? (
           <motion.div
-            className="absolute top-0"
+            className="smoothui-glass-sweep"
             style={{
               backgroundImage: SWEEP_GRADIENT,
               height: rimWidth + 2,
@@ -272,21 +252,18 @@ export default function GlassCard({
           />
         ) : null}
 
-        <div
-          className="absolute inset-0 rounded-[inherit]"
-          style={{ backgroundImage: BOTTOM_SHADE }}
-        />
+        <div className="smoothui-glass-bottom-shade" style={{ backgroundImage: BOTTOM_SHADE }} />
       </div>
 
       {border ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-[inherit]"
+          className="smoothui-glass-inner-ring"
           style={{ boxShadow: INNER_RING }}
         />
       ) : null}
 
-      <div className="relative" style={{ padding: contentPadding }}>
+      <div className="smoothui-glass-content" style={{ padding: contentPadding }}>
         {children}
       </div>
     </motion.div>
