@@ -8,6 +8,8 @@ on:
       - ".github/actions/resolve-registry-database/action.yml"
       - ".github/workflows/sync-live-country-registries.yml"
       - "scripts/sync-live-registry-to-tsv.mjs"
+      - "scripts/sync-canada-odhf-v2.mjs"
+      - "scripts/canada-odhf-v2-normalizer.mjs"
       - "scripts/sync-colombia-reps.py"
       - "scripts/sync-lithuania-vaspvt.py"
       - "scripts/sync-cyprus-state-hospitals.py"
@@ -96,6 +98,11 @@ jobs:
       - name: Install Colombia sync dependency
         if: (matrix.source == 'colombia-reps' || matrix.source == 'lithuania-vaspvt' || matrix.source == 'cyprus-state-hospitals' || matrix.source == 'moldova-health-institutions')
         run: python -m pip install --disable-pip-version-check requests beautifulsoup4
+      - name: Install GDAL for Canada ODHF v2 coordinate conversion
+        if: matrix.source == 'canada-odhf'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --yes --no-install-recommends gdal-bin
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
@@ -107,7 +114,9 @@ jobs:
           [[ "$TARGET_DATABASE_URL" == postgres* ]] || { echo "Dedicated registry database connection is missing" >&2; exit 1; }
           echo "::add-mask::${TARGET_DATABASE_URL}"
           mkdir -p /tmp/registry
-          if [[ "${{ matrix.source }}" == "colombia-reps" ]]; then
+          if [[ "${{ matrix.source }}" == "canada-odhf" ]]; then
+            count="$(node scripts/sync-canada-odhf-v2.mjs --output /tmp/registry/provider.tsv)"
+          elif [[ "${{ matrix.source }}" == "colombia-reps" ]]; then
             count="$(python scripts/sync-colombia-reps.py --output /tmp/registry/provider.tsv)"
           elif [[ "${{ matrix.source }}" == "lithuania-vaspvt" ]]; then
             count="$(python scripts/sync-lithuania-vaspvt.py --output /tmp/registry/provider.tsv)"

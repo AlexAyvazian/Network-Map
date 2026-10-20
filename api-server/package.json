@@ -20,7 +20,7 @@
     "test:provider-database-projects": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/provider-database-projects-smoke.ts",
     "test:external-source-resilience": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/external-source-resilience-smoke.ts",
     "test:observability": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/observability-diagnostics-smoke.ts",
-    "test:international-registries": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/international-registry-contract-smoke.ts && node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/canada-odhf-normalization-smoke.ts",
+    "test:international-registries": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/international-registry-contract-smoke.ts && node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/canada-odhf-normalization-smoke.ts && node ../scripts/canada-odhf-v2-normalization-smoke.mjs",
     "test:healthcare-access-scoring": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/healthcare-access-scoring-smoke.ts && node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/healthcare-access-outcomes.ts",
     "test:census-population-fallback": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/census-population-fallback-smoke.ts",
     "test:healthcare-access-regression": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/healthcare-access-regression-smoke.ts",
