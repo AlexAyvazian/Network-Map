@@ -210,11 +210,11 @@ export function normalizeCanada(feature: ArcGisFeature): Record<string, unknown>
 
   const street = canadaText(row, "address", "Address",
     "Source-Format Street Address", "source_format_str_address", "Street", "street")
-    ?? [
+    ?? ([
       canadaText(row, "Unit", "unit"),
       canadaText(row, "Street Number", "street_no", "street_number"),
       canadaText(row, "Street Name", "street_name"),
-    ].filter(Boolean).join(" ").trim() || null;
+    ].filter(Boolean).join(" ").trim() || null);
 
   const objectId = arcField(row, "OBJECTID", "ObjectId2", "ObjectId", "Index", "index_", "id", "source_id");
   const city = canadaText(row, "city_ville", "City", "city", "csdname", "CSDname", "csd_name_sdr_nom");
