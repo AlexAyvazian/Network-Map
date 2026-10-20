@@ -168,42 +168,61 @@ async function loadGermany(bounds: Bounds | null, limit: number, page: number) {
   return { providers: matching.slice(offset, offset + limit), total: matching.length };
 }
 
-function normalizeCanada(feature: ArcGisFeature): Record<string, unknown> | null {
+/** Statistics Canada's ArcGIS ODHF layer uses name_nom, city_ville, province_en,
+ * pc_cp, address, and facility_type (NOT the CSV's older field names).
+ * Also accept v1 CSV / alternative published schemas without fabricating values.
+ */
+function canadaText(row: Record<string, unknown>, ...keys: string[]): string | null {
+  for (const key of keys) {
+    const value = arcField(row, key);
+    if (typeof value !== "string" && typeof value !== "number") continue;
+    const result = String(value).trim();
+    if (!result || /^(?:null|undefined|n\/?a|unknown|none)$/i.test(result)) continue;
+    return result;
+  }
+  return null;
+}
+
+export function normalizeCanada(feature: ArcGisFeature): Record<string, unknown> | null {
   const row = feature.attributes || {};
   const lat = finiteNumber(feature.geometry?.y ?? arcField(row, "latitude", "lat"));
   const lng = finiteNumber(feature.geometry?.x ?? arcField(row, "longitude", "lon", "lng", "long"));
   if (lat === null || lng === null || lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
 
-  const facilityType = String(
-    arcField(row, "ODHF Facility Type", "odhf_facility_type", "Source Facility Type", "source_facility_type")
-      || "healthcare facility",
-  );
+  // Values are from the actual Government of Canada ODHF MapServer schema:
+  // https://www.earthquakescanada.nrcan.gc.ca/server2_serveur2/rest/services/StatCan/OpenDatabaseHealthFacilities/MapServer/layers
+  const name = canadaText(row,
+    "name_nom", "Facility Name", "facility_name", "Name", "name");
+  // Do not present a coordinate-only feature as an identified healthcare facility.
+  if (!name || /^Unnamed (?:Canadian healthcare facility|provider)$/i.test(name)) return null;
+
+  const facilityType = canadaText(row,
+    "facility_type", "ODHF Facility Type", "odhf_facility_type", "type",
+    "Source Facility Type", "source_facility_type") ?? "Healthcare facility";
   const typeLower = facilityType.toLowerCase();
   const clinicType = typeLower.includes("hospital")
     ? "hospital"
-    : typeLower.includes("ambulatory")
+    : typeLower.includes("ambulatory") || typeLower.includes("clinic")
       ? "general_practitioner"
       : typeLower.includes("nursing") || typeLower.includes("residential")
         ? "residential_care"
         : "healthcare_facility";
 
-  const street = String(
-    arcField(row, "Source-Format Street Address", "source_format_str_address")
-      || [
-        arcField(row, "Unit", "unit"),
-        arcField(row, "Street Number", "street_no", "street_number"),
-        arcField(row, "Street Name", "street_name"),
-      ].filter(Boolean).join(" ")
-      || "",
-  ).trim() || null;
+  const street = canadaText(row, "address", "Address",
+    "Source-Format Street Address", "source_format_str_address", "Street", "street")
+    ?? [
+      canadaText(row, "Unit", "unit"),
+      canadaText(row, "Street Number", "street_no", "street_number"),
+      canadaText(row, "Street Name", "street_name"),
+    ].filter(Boolean).join(" ").trim() || null;
 
-  const objectId = arcField(row, "OBJECTID", "ObjectId2", "ObjectId", "Index", "index_");
-  const name = String(arcField(row, "Facility Name", "facility_name", "name") || "Unnamed Canadian healthcare facility");
-  const city = arcField(row, "City", "city");
-  const province = arcField(row, "Province or Territory", "province", "province_territory");
-  const postalCode = arcField(row, "Postal Code", "postal_code", "postcode");
-  const provider = arcField(row, "Provider", "provider");
-  const sourceFacilityType = arcField(row, "Source Facility Type", "source_facility_type");
+  const objectId = arcField(row, "OBJECTID", "ObjectId2", "ObjectId", "Index", "index_", "id", "source_id");
+  const city = canadaText(row, "city_ville", "City", "city", "csdname", "CSDname", "csd_name_sdr_nom");
+  const province = canadaText(row, "province_en", "Province or Territory", "province",
+    "province_territory", "Prov", "prov_terr");
+  const postalCode = canadaText(row, "pc_cp", "Postal Code", "postal_code", "postcode");
+  const provider = canadaText(row, "Provider", "provider");
+  const sourceFacilityType = canadaText(row, "Source Facility Type", "source_facility_type", "source_class");
 
   const id = objectId == null
     ? stableId("ca-odhf", [name, street, city, lat, lng])
@@ -226,6 +245,7 @@ function normalizeCanada(feature: ArcGisFeature): Record<string, unknown> | null
     lng,
     phone: null,
     website: null,
+    source_url: "https://www.statcan.gc.ca/en/lode/databases/odhf",
     clinic_type: clinicType,
     providerType: clinicType,
     category: facilityType,
