@@ -117,6 +117,37 @@ async function assertButtonsHittable(page, selector, label) {
   assert.deepEqual(failures, [], `${label}: enabled buttons must be reachable and real pointer hit targets`);
 }
 
+/** Verify complete rendered tab labels fit INSIDE their own pill border.
+ * Overflow:hidden alone is not success: the full text glyph bounds must fit.
+ */
+async function assertWorkspaceTabLabelGeometry(page) {
+  for (const width of [1440, 1024, 820]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.waitForTimeout(120);
+    const failures = await page.locator(".occumed-sidebar-workspace-tab").evaluateAll((buttons) => {
+      return buttons.flatMap((button) => {
+        const label = button.textContent?.trim() ?? "";
+        const rect = button.getBoundingClientRect();
+        const text = document.createRange();
+        text.selectNodeContents(button);
+        const glyphs = text.getBoundingClientRect();
+        const style = getComputedStyle(button);
+        const fits = glyphs.width > 0
+          && glyphs.left >= rect.left + 1
+          && glyphs.right <= rect.right - 1
+          && glyphs.top >= rect.top
+          && glyphs.bottom <= rect.bottom
+          && button.scrollWidth <= button.clientWidth + 1;
+        return fits ? [] : [{ label, buttonWidth: rect.width, textWidth: glyphs.width,
+          textLeft: glyphs.left, textRight: glyphs.right, buttonLeft: rect.left,
+          buttonRight: rect.right, fontSize: style.fontSize }];
+      });
+    });
+    assert.deepEqual(failures, [], `At ${width}px viewport, all four sidebar labels must stay inside their buttons without clipping`);
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+}
+
 async function explorerCounts(page) {
   return page.evaluate(() => ({
     pins: window.__NETWORK_MAP_PROVIDER_EXPLORER_NATIVE__?.getSnapshot?.("pins")?.featureCount || 0,
@@ -161,6 +192,7 @@ try {
   await page.waitForFunction(() => Boolean(window.__NETWORK_MAP_PROVIDER_EXPLORER_INTENT__), null, { timeout: 20_000 });
   await page.waitForTimeout(900);
 
+  await assertWorkspaceTabLabelGeometry(page);
   await assertWorkspaceButtons(page, "Providers");
   const expectedLabels = [
     "Urgent Cares", "Occupational Health Clinics", "Dentists", "Blue Hive", "FAA Examiners", "DOT Examiners",
