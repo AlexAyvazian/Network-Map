@@ -48,7 +48,20 @@ try {
 
   const geojson = path.join(dir, "odhf.geojson");
   await unzipMember(archive, member, geojson);
-  const collection = JSON.parse(readFileSync(geojson, "utf8").replace(/^\uFEFF/, ""));
+  let collection = JSON.parse(readFileSync(geojson, "utf8").replace(/^\uFEFF/, ""));
+  const sourceCrs = collection?.crs?.properties?.name ?? "";
+  // StatsCan's 2026 ODHF v2 GeoJSON is EPSG:3347, *not* longitude/latitude.
+  // Use GDAL/PROJ's established transformation library; never approximate.
+  if (/EPSG(?:::|:)3347$/i.test(sourceCrs)) {
+    const wgs84File = path.join(dir, "odhf-wgs84.geojson");
+    execFileSync("ogr2ogr", [
+      "-f", "GeoJSON", "-s_srs", "EPSG:3347", "-t_srs", "EPSG:4326",
+      "-lco", "RFC7946=YES", wgs84File, geojson,
+    ], { timeout: 180_000 });
+    collection = JSON.parse(readFileSync(wgs84File, "utf8").replace(/^\uFEFF/, ""));
+  } else if (!/EPSG(?:::|:)4326$/i.test(sourceCrs)) {
+    throw new Error("Unexpected official ODHF v2 CRS: " + String(sourceCrs).slice(0, 200));
+  }
   if (collection?.type !== "FeatureCollection" || !Array.isArray(collection.features)) {
     throw new Error("Official ODHF v2 response is not a GeoJSON FeatureCollection");
   }
