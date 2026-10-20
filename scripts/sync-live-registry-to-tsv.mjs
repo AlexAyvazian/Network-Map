@@ -52,6 +52,11 @@ while (true) {
   for (const provider of providers) {
     const rawId = String(provider.source_id || provider.id || "").trim();
     const name = String(provider.name || "").trim();
+    // Do not overwrite the dedicated Canada registry with the old broken
+    // ArcGIS fallback names if Render still serves an older deployment.
+    if (source === "canada-odhf" && /^Unnamed (Canadian healthcare facility|provider)/i.test(name)) {
+      throw new Error("Canada ODHF API still returns fabricated facility names; refusing database refresh");
+    }
     const lat = Number(provider.lat);
     const lng = Number(provider.lng);
     if (!rawId || !name || !Number.isFinite(lat) || !Number.isFinite(lng) || seen.has(rawId)) continue;

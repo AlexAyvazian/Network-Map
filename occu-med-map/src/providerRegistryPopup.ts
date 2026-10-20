@@ -21,7 +21,13 @@ export function buildProviderRegistryPopup(provider: any, layer: { label: string
   const phone = typeof provider?.phone === 'string' ? provider.phone.trim() : '';
   const website = safeHttpUrl(provider?.website);
   const sourceUrl = safeHttpUrl(provider?.source_url || provider?.sourceUrl);
-  const type = escapeHtml(provider?.clinic_type || provider?.providerType || provider?.category || '');
+  // Canada ODHF's clinic_type is a machine key (e.g. healthcare_facility).
+  // Prefer the actual descriptive facility category in its popup.
+  const canadaOdhf = provider?.source === 'ca_odhf' || provider?.provider_layer_category === 'canada-odhf';
+  const rawType = canadaOdhf
+    ? (provider?.category || provider?.services?.[0] || provider?.clinic_type)
+    : (provider?.clinic_type || provider?.providerType || provider?.category);
+  const type = escapeHtml(rawType || '');
   return `<div class="provider-registry-popup">
     <div class="provider-registry-popup-name">${name}</div>
     <div class="provider-registry-popup-source">${escapeHtml(layer.label)}</div>
