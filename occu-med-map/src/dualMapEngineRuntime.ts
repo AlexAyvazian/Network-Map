@@ -281,9 +281,9 @@ async function createMapboxMap(mode: MapMode): Promise<void> {
   throw lastError instanceof Error ? lastError : new Error(`Mapbox ${mode} failed with all configured tokens`);
 }
 
-// The 2D map defaults to the original Mapbox Streets appearance.
-// Alternative basemaps remain available in Map Tools.
-const MAPBOX_2D_STYLE = "mapbox://styles/mapbox/streets-v12";
+// Keep the flat map and the globe on the SAME basemap. Only the projection
+// (Mercator versus globe), camera, and atmosphere differ between modes.
+const MAPBOX_BASEMAP_STYLE = "mapbox://styles/mapbox/standard";
 
 // Mercator with world copies disabled leaves empty bands beside the world once
 // the host is wider (or taller) than the world at the current zoom. Keep the
@@ -302,7 +302,7 @@ async function createMapboxMapWithToken(mode: MapMode, host: HTMLElement, token:
   const instance = new mapboxgl.Map({
     container: host,
     accessToken: token,
-    style: is2d ? MAPBOX_2D_STYLE : "mapbox://styles/mapbox/standard",
+    style: MAPBOX_BASEMAP_STYLE,
     projection: is2d ? "mercator" : "globe",
     center: [sharedCamera.lng, sharedCamera.lat],
     zoom: is2d ? sharedCamera.zoom2d : globeZoomFromMapZoom(sharedCamera.zoom2d),
