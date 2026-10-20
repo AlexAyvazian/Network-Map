@@ -116,7 +116,11 @@ const sourcePipeline = source("src/mapboxSourcePipelineRuntime.ts");
 assert.match(sourcePipeline, /prototype\.addSource = function pipelineAddSource/, "source pipeline must own Map.prototype.addSource");
 assert.match(sourcePipeline, /prototype\.removeSource = function pipelineRemoveSource/, "source pipeline must own Map.prototype.removeSource");
 
-assert.match(dualEngine, /MAPBOX_2D_STYLE = "mapbox:\/\/styles\/mapbox\/streets-v12"/, "the 2D map must open on the original Mapbox Streets basemap");
+assert.match(dualEngine, /MAPBOX_BASEMAP_STYLE = "mapbox:\/\/styles\/mapbox\/standard"/, "2D and globe must use the globe’s existing Standard basemap");
+assert.match(dualEngine, /style: MAPBOX_BASEMAP_STYLE/, "both dimensions must share the same basemap setting");
+assert.match(dualEngine, /projection: is2d \? "mercator" : "globe"/, "flat map and globe must keep their distinct projections");
+const mapCss = source("src/dual-map-engines.css");
+assert.doesNotMatch(mapCss, /background: #d9effb/, "flat map must never flash the old pale-blue host backdrop");
 assert.match(dualEngine, /attributionControl: true/, "Mapbox attribution must remain enabled");
 assert.match(dualEngine, /showCompass: !is2d/, "the non-rotating 2D map must not show a dead compass control");
 assert.match(dualEngine, /syncWorldCoverMinZoom\(instance\)/, "the 2D world must always cover its host without empty bands");

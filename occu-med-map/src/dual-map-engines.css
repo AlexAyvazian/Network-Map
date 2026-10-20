@@ -11,7 +11,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #d9effb;
+  background: #030712;
   transition: opacity 260ms ease, visibility 260ms ease;
 }
 
@@ -103,10 +103,10 @@
   pointer-events: none;
 }
 
-/* Match the original light Mapbox Streets host background while tiles load. */
+/* Keep the flat map backdrop aligned with the globe’s dark host while tiles load. */
 .mapbox-2d-host.ready,
 .mapbox-2d-host.engine-render-ready {
-  background: #d9effb;
+  background: #030712;
 }
 
 .dual-engine-loading strong {
