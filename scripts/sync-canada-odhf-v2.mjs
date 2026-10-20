@@ -66,6 +66,18 @@ try {
     lines.push(row.map(canadaTsvField).join("\t"));
   }
   const valid = lines.length - 1;
+  if (valid === 0) {
+    const first = collection.features[0] ?? {};
+    console.error("ODHF v2 schema diagnostics: " + JSON.stringify({
+      featureCount: collection.features.length,
+      sampleFeatureType: first.type,
+      sampleGeometryType: first.geometry?.type,
+      sampleCoordinates: first.geometry?.coordinates,
+      propertyNames: Object.keys(first.properties ?? {}).slice(0,35),
+      sampleName: first.properties?.name ?? null,
+      sampleId: first.properties?.id ?? null,
+    }));
+  }
   // Do not replace a 6k registry with an incomplete or broken v2 export.
   if (valid < 10_000) throw new Error("Too few valid named ODHF v2 records: " + valid);
   const writer = createWriteStream(output, { encoding: "utf8" });
