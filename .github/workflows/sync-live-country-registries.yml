@@ -8,6 +8,8 @@ on:
       - ".github/actions/resolve-registry-database/action.yml"
       - ".github/workflows/sync-live-country-registries.yml"
       - "scripts/sync-live-registry-to-tsv.mjs"
+      - "scripts/sync-canada-odhf-v2.mjs"
+      - "scripts/canada-odhf-v2-normalizer.mjs"
       - "scripts/sync-colombia-reps.py"
       - "scripts/sync-lithuania-vaspvt.py"
       - "scripts/sync-cyprus-state-hospitals.py"
@@ -107,7 +109,9 @@ jobs:
           [[ "$TARGET_DATABASE_URL" == postgres* ]] || { echo "Dedicated registry database connection is missing" >&2; exit 1; }
           echo "::add-mask::${TARGET_DATABASE_URL}"
           mkdir -p /tmp/registry
-          if [[ "${{ matrix.source }}" == "colombia-reps" ]]; then
+          if [[ "${{ matrix.source }}" == "canada-odhf" ]]; then
+            count="$(node scripts/sync-canada-odhf-v2.mjs --output /tmp/registry/provider.tsv)"
+          elif [[ "${{ matrix.source }}" == "colombia-reps" ]]; then
             count="$(python scripts/sync-colombia-reps.py --output /tmp/registry/provider.tsv)"
           elif [[ "${{ matrix.source }}" == "lithuania-vaspvt" ]]; then
             count="$(python scripts/sync-lithuania-vaspvt.py --output /tmp/registry/provider.tsv)"
