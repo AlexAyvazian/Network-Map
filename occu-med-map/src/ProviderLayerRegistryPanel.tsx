@@ -45,7 +45,7 @@ function initialState(): LayerStateMap {
 }
 
 function layerStatus(state: LayerState): string {
-  if (state.loading) return 'Loading current view…';
+  if (state.loading) return state.count > 0 ? `${state.count.toLocaleString()} mapped · updating view…` : 'Loading current view…';
   if (state.registryState === 'source_failed' || state.error) return `Source failed · ${state.error || state.warning}`;
   if (state.registryState === 'not_synchronized') return 'Not synchronized';
   if (!state.enabled) {
@@ -56,7 +56,7 @@ function layerStatus(state: LayerState): string {
   const visible = state.count > 0 ? `${state.count.toLocaleString()} mapped` : 'No matches in current view';
   const matching = state.total > state.count ? ` · ${state.total.toLocaleString()} in view` : '';
   const national = state.nationalTotal !== null ? ` · ${state.nationalTotal.toLocaleString()} national` : '';
-  return `${visible}${matching}${national}${state.warning ? ' · partial result' : ''}`;
+  return `${visible}${matching}${national}${state.warning ? (state.warning.startsWith('Previous view') ? ' · previous view retained' : ' · partial result') : ''}`;
 }
 
 function Toggle({ definition, state, onChange }: {
@@ -145,6 +145,9 @@ export default function ProviderLayerRegistryPanel() {
         throw new Error(data?.warning || data?.error || `HTTP ${response.status}`);
       }
       const providers = Array.isArray(data?.providers) ? data.providers : [];
+      if (data?.partial && providers.length === 0 && Array.isArray(data?.warnings) && data.warnings.length) {
+        throw new Error(String(data.warning || 'Provider databases are temporarily unavailable'));
+      }
       const registryState: RegistryState = data?.registryState === 'not_synchronized'
         ? 'not_synchronized'
         : data?.registryState === 'source_failed'
@@ -172,20 +175,21 @@ export default function ProviderLayerRegistryPanel() {
       }));
     } catch (error) {
       if (controller.signal.aborted) return;
-      clearProviderDataset(definition.channel);
-      setLayers((current) => ({
-        ...current,
-        [definition.id]: {
-          ...current[definition.id],
-          loading: false,
-          count: 0,
-          total: 0,
-          nationalTotal: null,
-          error: error instanceof Error ? error.message : 'Layer load failed',
-          warning: '',
-          registryState: 'source_failed',
-        },
-      }));
+      // A failed map refresh must not erase the last successfully rendered layer.
+      const message = error instanceof Error ? error.message : 'Layer load failed';
+      setLayers((current) => {
+        const previous = current[definition.id] || EMPTY_LAYER_STATE;
+        return {
+          ...current,
+          [definition.id]: {
+            ...previous,
+            loading: false,
+            error: previous.count > 0 ? '' : message,
+            warning: previous.count > 0 ? `Previous view retained: ${message}` : '',
+            registryState: previous.count > 0 ? previous.registryState : 'source_failed',
+          },
+        };
+      });
     } finally {
       if (controllers.current.get(definition.id) === controller) controllers.current.delete(definition.id);
     }
@@ -227,7 +231,7 @@ export default function ProviderLayerRegistryPanel() {
         for (const definition of definitions) {
           if (layerStateRef.current[definition.id]?.enabled) void loadLayer(definition);
         }
-      }, 350);
+      }, 850);
     };
     window.addEventListener('network-map:native-camera', reloadVisible);
     return () => {
