@@ -70,6 +70,7 @@ try {
     const first = collection.features[0] ?? {};
     console.error("ODHF v2 schema diagnostics: " + JSON.stringify({
       featureCount: collection.features.length,
+      rootCrs: collection.crs ?? null,
       sampleFeatureType: first.type,
       sampleGeometryType: first.geometry?.type,
       sampleCoordinates: first.geometry?.coordinates,
