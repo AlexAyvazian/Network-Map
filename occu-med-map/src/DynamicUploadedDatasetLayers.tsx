@@ -70,7 +70,7 @@ function popup(provider: any, category: UploadedCategory): string {
 }
 
 function statusText(state: LayerState): string {
-  if (state.loading) return 'Loading all records in view…';
+  if (state.loading) return state.count > 0 ? `${state.count.toLocaleString()} mapped · updating view…` : 'Loading all records in view…';
   if (state.error) return state.error;
   if (!state.enabled) return `${state.total.toLocaleString()} total · off`;
   const total = state.total > state.count ? ` · ${state.total.toLocaleString()} matching` : '';
@@ -146,6 +146,9 @@ export default function DynamicUploadedDatasetLayers() {
         throw new Error(data?.error || `HTTP ${response.status}`);
       }
       const providers = Array.isArray(data?.providers) ? data.providers : [];
+      if (data?.partial && providers.length === 0 && Array.isArray(data?.warnings) && data.warnings.length) {
+        throw new Error(String(data.warning || 'Provider databases are temporarily unavailable'));
+      }
       const mapped = renderProviderDataset(channelFor(category.sourceKey), providers, {
         baseColor: colorFor(category.sourceKey),
         glow: false,
@@ -163,16 +166,19 @@ export default function DynamicUploadedDatasetLayers() {
       }));
     } catch (error) {
       if (controller.signal.aborted) return;
-      clearProviderDataset(channelFor(category.sourceKey));
-      setLayers((current) => ({
-        ...current,
-        [category.id]: {
-          ...(current[category.id] || EMPTY_STATE),
-          loading: false,
-          count: 0,
-          error: error instanceof Error ? error.message : 'Layer load failed',
-        },
-      }));
+      // Retain mapped locations when a camera refresh fails or times out.
+      const message = error instanceof Error ? error.message : 'Layer load failed';
+      setLayers((current) => {
+        const previous = current[category.id] || EMPTY_STATE;
+        return {
+          ...current,
+          [category.id]: {
+            ...previous,
+            loading: false,
+            error: previous.count > 0 ? '' : message,
+          },
+        };
+      });
     } finally {
       if (controllers.current.get(category.id) === controller) controllers.current.delete(category.id);
     }
@@ -231,7 +237,7 @@ export default function DynamicUploadedDatasetLayers() {
         for (const category of categoriesRef.current) {
           if (layerStateRef.current[category.id]?.enabled) void loadLayer(category);
         }
-      }, 350);
+      }, 850);
     };
     window.addEventListener('network-map:native-camera', reloadVisible);
     return () => {

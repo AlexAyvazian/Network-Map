@@ -63,4 +63,22 @@ for (const retired of [
   assert.ok(!sourceFiles(srcRoot).some((file) => path.basename(file) === retired), `${retired} must remain retired`);
 }
 
+
+const registryPanel = source("src/ProviderLayerRegistryPanel.tsx");
+const uploadedPanel = source("src/DynamicUploadedDatasetLayers.tsx");
+const layerRequests = source("src/providerLayerRequestRuntime.ts");
+
+for (const [label, panel] of [["registry", registryPanel], ["uploaded", uploadedPanel]] as const) {
+  const catchBlock = panel.match(/} catch \(error\) \{([\s\S]*?)\n    } finally \{/);
+  assert.ok(catchBlock, `${label} layer loader must handle request errors`);
+  assert.doesNotMatch(catchBlock[1], /clearProviderDataset\(/,
+    `${label} layer must preserve previously mapped points on a failed zoom refresh`);
+  assert.doesNotMatch(catchBlock[1], /count:\s*0/,
+    `${label} layer must retain the previous mapped count on a failed zoom refresh`);
+}
+assert.match(layerRequests, /existingRequest\s*&&\s*!existingRequest\.signal\?\.aborted/,
+  "new camera requests must never reuse an aborted in-flight request");
+assert.match(layerRequests, /inFlight\.get\(requestKey\)\?\.promise\s*===\s*request/,
+  "a stale aborted fetch must not remove the newer request from in-flight tracking");
+
 console.log("Unified network request pipeline hardening smoke test passed.");
