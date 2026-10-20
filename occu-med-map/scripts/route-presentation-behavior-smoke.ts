@@ -168,6 +168,18 @@ assert.ok(html.includes('Latvia Medical Facilities Registry'));
 assert.ok(html.includes('https://registry.example/facility'));
 assert.ok(!html.includes('lv_medical_facilities') && !html.includes('javascript:'));
 
+const canadaPopup = buildProviderRegistryPopup({
+  name: 'Northern Regional Hospital', source: 'ca_odhf',
+  address: '123 Main Street', city: 'Yellowknife', admin_area: 'Northwest Territories',
+  clinic_type: 'healthcare_facility', category: 'Hospitals',
+  source_url: 'https://www.statcan.gc.ca/en/lode/databases/odhf',
+}, { label: 'Canada — ODHF' });
+assert.ok(canadaPopup.includes('Northern Regional Hospital'));
+assert.ok(canadaPopup.includes('123 Main Street, Yellowknife, Northwest Territories'));
+assert.ok(canadaPopup.includes('<div class="provider-registry-popup-row">Hospitals</div>'));
+assert.ok(!canadaPopup.includes('healthcare_facility'), 'Never show machine category in ODHF popups');
+
+
 // Exercise the registered state-popup owner without requiring a WebGL context.
 const popups: FakePopup[] = [];
 class FakePopup {
