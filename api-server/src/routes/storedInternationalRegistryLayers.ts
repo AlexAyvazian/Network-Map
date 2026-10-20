@@ -115,6 +115,13 @@ function registryWhere(definition: StoredRegistryDefinition, bounds: Bounds | nu
   if (definition.countryCode) {
     conditions.push(`upper(p.country_code) = ${addParam(params, definition.countryCode)}`);
   }
+  // The old ODHF sync imported thousands of literal placeholder names.
+  // They must not appear in map results while the corrected sync runs.
+  if (definition.sourceKey === "ca_odhf") conditions.push(
+    "nullif(btrim(p.name), '') IS NOT NULL",
+    "p.name NOT ILIKE 'Unnamed Canadian healthcare facility%'",
+    "p.name NOT ILIKE 'Unnamed provider%'",
+  );
   if (bounds) {
     conditions.push(`p.lat BETWEEN ${addParam(params, bounds.south)} AND ${addParam(params, bounds.north)}`);
     conditions.push(bounds.west <= bounds.east
@@ -127,6 +134,11 @@ function registryWhere(definition: StoredRegistryDefinition, bounds: Bounds | nu
 function toProvider(row: Record<string, unknown>, source: string, definition: StoredRegistryDefinition) {
   const type = String(row.primary_provider_type || "unknown");
   const tags = Array.isArray(row.capability_tags) ? row.capability_tags.map(String) : [type];
+  const canadianType = definition.sourceKey === "ca_odhf"
+    ? (tags.find(tag => !/^(healthcare_facility|hospital|general_practitioner|residential_care)$/i.test(tag))
+        ?? ({ hospital: "Hospital", general_practitioner: "Ambulatory healthcare",
+          residential_care: "Nursing / residential care" }[type] ?? "Healthcare facility"))
+    : type;
   return {
     id: String(row.master_key || row.source_record_id || ""),
     source_id: String(row.source_record_id || row.master_key || ""),
@@ -144,11 +156,12 @@ function toProvider(row: Record<string, unknown>, source: string, definition: St
     lng: Number(row.lng),
     phone: row.phone ?? null,
     website: row.website ?? null,
+    source_url: row.source_url ?? null,
     clinic_type: type,
     providerType: type,
-    category: type,
-    services: tags,
-    categories: tags,
+    category: canadianType,
+    services: definition.sourceKey === "ca_odhf" ? [canadianType] : tags,
+    categories: definition.sourceKey === "ca_odhf" ? [canadianType] : tags,
     types: tags,
     source: definition.sourceKey,
     data_source: definition.sourceKey,
@@ -197,12 +210,16 @@ router.get("/stored-international-registry-layers/:source", async (req: Request,
     const registryScope = definition.countryCode
       ? `upper(p.country_code) = ${addParam(nationalParams, definition.countryCode)} AND`
       : "";
+    const nameQualityClause = definition.sourceKey === "ca_odhf"
+      ? "AND nullif(btrim(p.name), '') IS NOT NULL AND p.name NOT ILIKE 'Unnamed Canadian healthcare facility%' AND p.name NOT ILIKE 'Unnamed provider%'"
+      : "";
     const nationalResult = await queryWithStatementTimeout(project.pool, `
       SELECT count(*)::int AS total
       FROM public.official_registry_providers p
       WHERE ${registryScope}
         p.lat BETWEEN -90 AND 90 AND p.lng BETWEEN -180 AND 180
         AND (p.lat <> 0 OR p.lng <> 0)
+        ${nameQualityClause}
     `, nationalParams);
     const nationalTotal = Number(nationalResult.rows[0]?.total || 0);
 
