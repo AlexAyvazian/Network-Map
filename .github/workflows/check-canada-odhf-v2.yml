@@ -1,0 +1,34 @@
+name: Verify Canada ODHF v2 official download
+
+on:
+  pull_request:
+    paths:
+      - "scripts/sync-canada-odhf-v2.mjs"
+      - "scripts/canada-odhf-v2-normalizer.mjs"
+      - "scripts/canada-odhf-v2-normalization-smoke.mjs"
+      - ".github/workflows/check-canada-odhf-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-canada-source:
+    name: Validate official 2026 Canada data and generated TSV
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate ODHF v2 data mapper fixtures
+        run: node scripts/canada-odhf-v2-normalization-smoke.mjs
+      - name: Download current Statistics Canada release and validate real record count
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/sync-canada-odhf-v2.mjs --output /tmp/canada-odhf-v2.tsv
+          count=$(($(wc -l < /tmp/canada-odhf-v2.tsv) - 1))
+          (( count > 10000 ))
+          echo "Verified ${count} named ODHF v2 facilities from Statistics Canada's official GeoJSON"
