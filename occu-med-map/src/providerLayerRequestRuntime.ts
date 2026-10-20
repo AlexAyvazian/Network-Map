@@ -51,7 +51,8 @@ const MAX_PAGE_SIZE = 5000;
 
 const cacheByRequest = new Map<string, CachedResponse>();
 const latestBySource = new Map<string, CachedResponse>();
-const inFlight = new Map<string, Promise<CaptureResult>>();
+// An abortable request belongs to its caller: never share its cancellation with another map refresh.
+const inFlight = new Map<string, { promise: Promise<CaptureResult>; signal?: AbortSignal | null }>();
 const networkWaiters: Array<() => void> = [];
 let activeNetworkLoads = 0;
 
@@ -427,8 +428,8 @@ export async function fetchProviderLayer(input: RequestInfo | URL, init?: Reques
   }
 
   const existingRequest = inFlight.get(requestKey);
-  if (existingRequest) {
-    const shared = await existingRequest;
+  if (existingRequest && !existingRequest.signal?.aborted && !init?.signal) {
+    const shared = await existingRequest.promise;
     if (shared.entry) {
       dispatchStatus(shared.entry, true, false, viewport);
       return responseFromCache(shared.entry);
@@ -458,8 +459,11 @@ export async function fetchProviderLayer(input: RequestInfo | URL, init?: Reques
     }
   });
 
-  inFlight.set(requestKey, request);
-  const result = await request.finally(() => inFlight.delete(requestKey));
+  inFlight.set(requestKey, { promise: request, signal: init?.signal });
+  const result = await request.finally(() => {
+    // An older aborted fetch must not delete the newer request for the same viewport.
+    if (inFlight.get(requestKey)?.promise === request) inFlight.delete(requestKey);
+  });
   if (result.entry) {
     cacheByRequest.set(requestKey, result.entry);
     latestBySource.set(source, result.entry);
