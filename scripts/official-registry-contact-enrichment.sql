@@ -43,6 +43,15 @@ CREATE TABLE IF NOT EXISTS public.official_registry_contact_email_evidence (
   CONSTRAINT official_registry_contact_email_evidence_unique UNIQUE (contact_email_id, source_url)
 );
 
+-- Track attempted facility websites independently of the registry snapshot.
+-- Resuming a batch never deletes or duplicates previously found contacts.
+CREATE TABLE IF NOT EXISTS public.official_registry_contact_crawl_state (
+  source_record_id text PRIMARY KEY,
+  attempted_at timestamptz NOT NULL DEFAULT now(),
+  pages_scanned integer NOT NULL DEFAULT 0 CHECK (pages_scanned >= 0),
+  candidate_email_count integer NOT NULL DEFAULT 0 CHECK (candidate_email_count >= 0)
+);
+
 CREATE INDEX IF NOT EXISTS official_registry_contact_emails_record_idx
   ON public.official_registry_contact_emails (source_record_id, source_status);
 
