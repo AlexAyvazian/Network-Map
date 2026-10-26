@@ -237,3 +237,44 @@ export async function mapboxIsochrone(origin: Point, minutes = [15, 30, 45, 60],
   });
   return send<GeoJSON.FeatureCollection>(request, "isochrone", 18000);
 }
+
+export type MapboxCityRegion = {
+  city: string;
+  /** ISO 3166-2 subdivision suffix, e.g. "TX" for "US-TX". */
+  regionCode: string;
+  regionName: string;
+  countryCode?: string;
+};
+
+/**
+ * Reverse geocodes a point to its city and state/region. Mapbox Geocoding v5
+ * documents `short_code` as "the ISO 3166-1 country and ISO 3166-2 region
+ * code" (e.g. "US-CA"), so the region abbreviation comes straight from the
+ * API rather than from matching state names.
+ */
+export async function mapboxReverseCityRegion(point: Point): Promise<MapboxCityRegion | null> {
+  assertToken();
+  const url = addToken(new URL(`https://api.mapbox.com/geocoding/v5/mapbox.places/${point.lng},${point.lat}.json`));
+  url.searchParams.set("types", "place,locality,district");
+  url.searchParams.set("language", "en");
+  const resp = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
+  if (!resp.ok) throw new Error(`Mapbox reverse geocode HTTP ${resp.status}`);
+  const data = await resp.json();
+  const features: any[] = Array.isArray(data.features) ? data.features : [];
+  const feature = features.find((f) => String(f?.id || "").startsWith("place."))
+    || features.find((f) => String(f?.id || "").startsWith("locality."))
+    || features[0];
+  if (!feature) return null;
+  const context: any[] = Array.isArray(feature.context) ? feature.context : [];
+  const region = context.find((entry) => String(entry?.id || "").startsWith("region."));
+  const shortCode = typeof region?.short_code === "string" ? region.short_code : "";
+  const regionCode = shortCode.includes("-") ? shortCode.split("-").slice(1).join("-").toUpperCase() : shortCode.toUpperCase();
+  const city = typeof feature.text === "string" ? feature.text : "";
+  if (!city) return null;
+  return {
+    city,
+    regionCode,
+    regionName: typeof region?.text === "string" ? region.text : "",
+    countryCode: countryContext(feature).code,
+  };
+}
