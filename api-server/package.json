@@ -18,6 +18,7 @@
     "test:api-security": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/api-security-smoke.ts",
     "test:database-lifecycle": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/database-lifecycle-smoke.ts",
     "test:provider-database-projects": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/provider-database-projects-smoke.ts",
+    "test:provider-layer-single-request": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/provider-layer-single-request-smoke.ts",
     "test:external-source-resilience": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/external-source-resilience-smoke.ts",
     "test:observability": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/observability-diagnostics-smoke.ts",
     "test:international-registries": "node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/international-registry-contract-smoke.ts && node --import ../occu-med-map/node_modules/tsx/dist/loader.mjs scripts/canada-odhf-normalization-smoke.ts && node ../scripts/canada-odhf-v2-normalization-smoke.mjs",

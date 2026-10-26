@@ -294,6 +294,9 @@ async function fetchAllProviderPages(url: URL, init?: RequestInit): Promise<Resp
   const limit = Math.max(Number(url.searchParams.get("limit")) || DEFAULT_PAGE_SIZE, 1);
   let page = 1;
   let hasMore = Boolean(firstPayload.hasMore) || providers.length < total;
+  // A complete first response (e.g. allInView=true) needs no merge: hand it
+  // back untouched instead of re-serializing a multi-megabyte payload.
+  if (!hasMore) return firstResponse;
 
   while (hasMore && providers.length < total) {
     page += 1;

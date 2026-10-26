@@ -97,13 +97,22 @@ function asBounds(req: Request): Bounds | null {
   return { north, south, east, west };
 }
 
+// Only a positive probe is cached: a registry that has not been synchronized
+// yet must be picked up as soon as its sync creates the table.
+const TABLE_PROBE_TTL_MS = 5 * 60_000;
+const tableProbeCache = new Map<string, number>();
+
 async function registryTableAvailable(project: RegistryDatabaseProject): Promise<boolean> {
+  const checkedAt = tableProbeCache.get(project.id);
+  if (checkedAt && Date.now() - checkedAt < TABLE_PROBE_TTL_MS) return true;
   const { rows } = await queryWithStatementTimeout(
     project.pool,
     "SELECT to_regclass('public.official_registry_providers') IS NOT NULL AS ok",
     [],
   );
-  return rows[0]?.ok === true;
+  const ok = rows[0]?.ok === true;
+  if (ok) tableProbeCache.set(project.id, Date.now());
+  return ok;
 }
 
 function registryWhere(definition: StoredRegistryDefinition, bounds: Bounds | null, params: unknown[]): string {
@@ -130,6 +139,10 @@ function registryWhere(definition: StoredRegistryDefinition, bounds: Bounds | nu
   }
   return conditions.join(" AND ");
 }
+
+const REGISTRY_COLUMNS = `source_record_id, source_url, name, address_line1, formatted_address,
+        city, state_region, postal_code, country_code, lat, lng, phone, website,
+        primary_provider_type, capability_tags, quality_score, master_key`;
 
 function toProvider(row: Record<string, unknown>, source: string, definition: StoredRegistryDefinition) {
   const type = String(row.primary_provider_type || "unknown");
@@ -213,7 +226,7 @@ router.get("/stored-international-registry-layers/:source", async (req: Request,
     const nameQualityClause = definition.sourceKey === "ca_odhf"
       ? "AND nullif(btrim(p.name), '') IS NOT NULL AND p.name NOT ILIKE 'Unnamed Canadian healthcare facility%' AND p.name NOT ILIKE 'Unnamed provider%'"
       : "";
-    const nationalResult = await queryWithStatementTimeout(project.pool, `
+    const nationalQuery = queryWithStatementTimeout(project.pool, `
       SELECT count(*)::int AS total
       FROM public.official_registry_providers p
       WHERE ${registryScope}
@@ -221,29 +234,52 @@ router.get("/stored-international-registry-layers/:source", async (req: Request,
         AND (p.lat <> 0 OR p.lng <> 0)
         ${nameQualityClause}
     `, nationalParams);
-    const nationalTotal = Number(nationalResult.rows[0]?.total || 0);
 
     const params: unknown[] = [];
     const where = registryWhere(definition, bounds, params);
-    const countResult = await queryWithStatementTimeout(
-      project.pool,
-      `SELECT count(*)::int AS total FROM public.official_registry_providers p WHERE ${where}`,
-      params,
-    );
-    const total = Number(countResult.rows[0]?.total || 0);
-    const limitParam = addParam(params, limit);
-    const offsetParam = addParam(params, (page - 1) * limit);
-    const pageResult = await queryWithStatementTimeout(project.pool, `
-      SELECT source_record_id, source_url, name, address_line1, formatted_address,
-        city, state_region, postal_code, country_code, lat, lng, phone, website,
-        primary_provider_type, capability_tags, quality_score, master_key
-      FROM public.official_registry_providers p
-      WHERE ${where}
-      ORDER BY p.name ASC, p.source_record_id ASC
-      LIMIT ${limitParam} OFFSET ${offsetParam}
-    `, params);
+    const allInView = req.query.allInView === "true";
+    let total: number;
+    let pageRows: Record<string, unknown>[];
+    let nationalTotal: number;
+    if (allInView) {
+      // One viewport query run alongside the national count, instead of a
+      // count plus LIMIT/OFFSET pages that each rescan the earlier rows.
+      const [nationalResult, viewportResult] = await Promise.all([
+        nationalQuery,
+        queryWithStatementTimeout(project.pool, `
+          SELECT ${REGISTRY_COLUMNS}
+          FROM public.official_registry_providers p
+          WHERE ${where}
+        `, params),
+      ]);
+      nationalTotal = Number(nationalResult.rows[0]?.total || 0);
+      pageRows = viewportResult.rows;
+      total = pageRows.length;
+    } else {
+      const countQuery = queryWithStatementTimeout(
+        project.pool,
+        `SELECT count(*)::int AS total FROM public.official_registry_providers p WHERE ${where}`,
+        [...params],
+      );
+      const limitParam = addParam(params, limit);
+      const offsetParam = addParam(params, (page - 1) * limit);
+      const [nationalResult, countResult, pageResult] = await Promise.all([
+        nationalQuery,
+        countQuery,
+        queryWithStatementTimeout(project.pool, `
+          SELECT ${REGISTRY_COLUMNS}
+          FROM public.official_registry_providers p
+          WHERE ${where}
+          ORDER BY p.name ASC, p.source_record_id ASC
+          LIMIT ${limitParam} OFFSET ${offsetParam}
+        `, params),
+      ]);
+      nationalTotal = Number(nationalResult.rows[0]?.total || 0);
+      total = Number(countResult.rows[0]?.total || 0);
+      pageRows = pageResult.rows;
+    }
 
-    const providers = pageResult.rows.map((row) => toProvider(row, source, definition));
+    const providers = pageRows.map((row) => toProvider(row, source, definition));
     res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     res.json({
       providers,
@@ -253,7 +289,8 @@ router.get("/stored-international-registry-layers/:source", async (req: Request,
       nationalTotal,
       page,
       limit,
-      hasMore: page * limit < total,
+      hasMore: !allInView && page * limit < total,
+      ...(allInView ? { allInView: true } : {}),
       source,
       databaseProject: project.id,
       officialRegistry: true,
