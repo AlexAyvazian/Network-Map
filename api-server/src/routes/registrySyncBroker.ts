@@ -9,7 +9,10 @@ const router = Router();
 const OIDC_ISSUER = "https://token.actions.githubusercontent.com";
 const OIDC_AUDIENCE = "network-map-registry-sync";
 const OIDC_JWKS_URL = `${OIDC_ISSUER}/.well-known/jwks`;
-const EXPECTED_REPOSITORY = "Occumed79/Network-Map";
+// GitHub OIDC tokens carry the repository's current owner/name. The repo moved
+// from Occumed79 to AlexAyvazian, so the old name is no longer issued (and must
+// not stay trusted, since that name could be claimed by another account).
+const EXPECTED_REPOSITORY = "AlexAyvazian/Network-Map";
 const ALLOWED_WORKFLOWS = new Set([
   "sync-live-country-registries.yml",
   "sync-europe-dedicated-registries.yml",
