@@ -44,10 +44,65 @@ psql "$TARGET_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -v record_count="$actual" <<SQL
 BEGIN;
 LOCK TABLE public.official_registry_providers IN ACCESS EXCLUSIVE MODE;
+
+-- Preserve optional in-row contact enrichment across registry snapshot refreshes.
+-- Countries without the optional emails[] column simply produce an empty snapshot.
+CREATE TEMP TABLE registry_contact_snapshot (
+  source_record_id text PRIMARY KEY,
+  name text,
+  normalized_name text,
+  phone text,
+  website text,
+  email text,
+  emails text[]
+) ON COMMIT DROP;
+DO $
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'official_registry_providers'
+      AND column_name = 'emails'
+  ) THEN
+    EXECUTE $snapshot$
+      INSERT INTO registry_contact_snapshot
+        (source_record_id, name, normalized_name, phone, website, email, emails)
+      SELECT source_record_id, name, normalized_name, phone, website, email, emails
+      FROM public.official_registry_providers
+      WHERE cardinality(emails) > 0
+    $snapshot$;
+  END IF;
+END $;
+
 TRUNCATE public.official_registry_providers;
 INSERT INTO public.official_registry_providers (${columns})
   SELECT ${columns}
   FROM public.official_registry_providers_stage;
+
+DO $
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'official_registry_providers'
+      AND column_name = 'emails'
+  ) THEN
+    EXECUTE $restore$
+      UPDATE public.official_registry_providers AS p
+      SET name = s.name,
+          normalized_name = s.normalized_name,
+          phone = COALESCE(NULLIF(s.phone, ''), p.phone),
+          website = COALESCE(NULLIF(s.website, ''), p.website),
+          email = COALESCE(NULLIF(s.email, ''), p.email),
+          emails = s.emails
+      FROM registry_contact_snapshot AS s
+      WHERE p.source_record_id = s.source_record_id
+    $restore$;
+  END IF;
+END $;
+
 INSERT INTO public.official_registry_metadata
   (source_key, country_code, record_count, synchronized_at)
 VALUES (:'source_key', :'country_code', :'record_count'::bigint, now())
