@@ -44,49 +44,10 @@ psql "$TARGET_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -v record_count="$actual" <<SQL
 BEGIN;
 LOCK TABLE public.official_registry_providers IN ACCESS EXCLUSIVE MODE;
-
-SELECT EXISTS (
-  SELECT 1
-  FROM information_schema.columns
-  WHERE table_schema = 'public'
-    AND table_name = 'official_registry_providers'
-    AND column_name = 'emails'
-) AS has_contact_enrichment \gset
-
-\if :has_contact_enrichment
-CREATE TEMP TABLE registry_contact_snapshot ON COMMIT DROP AS
-SELECT source_record_id, name, normalized_name, phone, website, email, emails
-FROM public.official_registry_providers
-WHERE cardinality(emails) > 0;
-\else
-CREATE TEMP TABLE registry_contact_snapshot (
-  source_record_id text PRIMARY KEY,
-  name text,
-  normalized_name text,
-  phone text,
-  website text,
-  email text,
-  emails text[]
-) ON COMMIT DROP;
-\endif
-
 TRUNCATE public.official_registry_providers;
 INSERT INTO public.official_registry_providers (${columns})
   SELECT ${columns}
   FROM public.official_registry_providers_stage;
-
-\if :has_contact_enrichment
-UPDATE public.official_registry_providers AS p
-SET name = s.name,
-    normalized_name = s.normalized_name,
-    phone = COALESCE(NULLIF(s.phone, ''), p.phone),
-    website = COALESCE(NULLIF(s.website, ''), p.website),
-    email = COALESCE(NULLIF(s.email, ''), p.email),
-    emails = s.emails
-FROM registry_contact_snapshot AS s
-WHERE p.source_record_id = s.source_record_id;
-\endif
-
 INSERT INTO public.official_registry_metadata
   (source_key, country_code, record_count, synchronized_at)
 VALUES (:'source_key', :'country_code', :'record_count'::bigint, now())
