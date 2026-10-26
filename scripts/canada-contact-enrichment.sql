@@ -25,3 +25,11 @@ CREATE TABLE IF NOT EXISTS public.official_registry_contact_website_crawl_state 
 );
 CREATE INDEX IF NOT EXISTS official_registry_contact_websites_status_idx
   ON public.official_registry_contact_websites (verification_status, source_record_id);
+
+-- OSM geospatial queries are scheduled in limited batches. Retry failed upstream
+-- fetches, and retain checkpoints independently of source snapshot refreshes.
+CREATE TABLE IF NOT EXISTS public.official_registry_contact_geo_discovery_state (
+  source_record_id text PRIMARY KEY,
+  attempted_at timestamptz NOT NULL DEFAULT now(),
+  candidate_website_count integer NOT NULL DEFAULT 0 CHECK (candidate_website_count >= 0)
+);
