@@ -1,6 +1,10 @@
 name: Enrich Canadian healthcare facility contacts
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/enrich-canada-contacts.yml"
   schedule:
     - cron: "23 14 * * *"
 permissions:
