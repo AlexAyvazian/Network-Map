@@ -115,10 +115,13 @@ try {
     assert.equal(geometry.titleText, "Global Health Directory Map");
     assert.ok(geometry.titleOffset <= 1, "Title must be centered");
     assert.ok(geometry.titleTop <= 60, "Title must sit at the top of the page");
-    assert.ok(geometry.titleGap >= 0, "Globe must not overlap the title");
+    assert.ok(
+      geometry.titleGap >= 0 && geometry.titleGap <= 40,
+      `Globe must sit just under the title (gap ${Math.round(geometry.titleGap)}px)`,
+    );
     assert.ok(geometry.globeBottomGap >= 0, "Globe must fit on the page");
     assert.ok(
-      geometry.globeDiameter >= 560,
+      geometry.globeDiameter >= 700,
       `Globe must be enlarged (diameter ${Math.round(geometry.globeDiameter)}px)`,
     );
     assert.ok(

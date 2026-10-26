@@ -158,26 +158,28 @@ export function NetworkMapLanding({ onEnter }: { onEnter: () => void }) {
       >
         Enter Map <span aria-hidden="true">→</span>
       </button>
-      <section
-        className="nm-landing-globe-stage"
-        aria-label="Interactive globe. Drag to rotate."
-        tabIndex={0}
-      >
-        {entering && <MagicRings onComplete={finishEntry} />}
-        <GlobeBoundary>
-          <Suspense
-            fallback={
-              <div className="nm-landing-loading" aria-label="Loading globe" />
-            }
-          >
-            <World
-              globeConfig={activeGlobeConfig}
-              data={data}
-              reducedMotion={reducedMotion}
-            />
-          </Suspense>
-        </GlobeBoundary>
-      </section>
+      <div className="nm-landing-globe-area">
+        <section
+          className="nm-landing-globe-stage"
+          aria-label="Interactive globe. Drag to rotate."
+          tabIndex={0}
+        >
+          {entering && <MagicRings onComplete={finishEntry} />}
+          <GlobeBoundary>
+            <Suspense
+              fallback={
+                <div className="nm-landing-loading" aria-label="Loading globe" />
+              }
+            >
+              <World
+                globeConfig={activeGlobeConfig}
+                data={data}
+                reducedMotion={reducedMotion}
+              />
+            </Suspense>
+          </GlobeBoundary>
+        </section>
+      </div>
     </main>
   );
 }

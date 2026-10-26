@@ -76,25 +76,34 @@
   letter-spacing: -0.03em;
   text-align: center;
   margin: 0;
-  background: linear-gradient(180deg, #ffffff 30%, #a5c4ef 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 28px rgba(120, 160, 255, 0.25);
 }
-/* The globe fills the space under the title. Its radius is derived from the
-   stage height (camera FOV 50, distance 300), and MagicRings reads the same
-   height, so the entry wave always matches the globe. */
-.nm-landing-globe-stage {
+/* The area under the title is a size container, so the globe can be sized
+   from the space actually left on the page (CSS container query units). */
+.nm-landing-globe-area {
   flex: 1 1 auto;
-  width: calc(100% + 40px);
-  /* auto centers the globe vertically when max-height caps it on narrow
-     screens, where the vertical FOV would otherwise make it wider than the page. */
-  margin: auto -20px;
-  min-height: 300px;
-  max-height: calc(100vw * 1.15);
+  align-self: stretch;
   position: relative;
-  align-self: center;
+  margin: 0 -20px;
+  min-height: 300px;
+  container-type: size;
+  --globe-gap: clamp(8px, 1.5vh, 16px);
+  /* Fill the height, but never get wider than the page on narrow screens. */
+  --globe-diameter: min(
+    calc(100cqh - 2 * var(--globe-gap)),
+    calc(100cqw - 16px)
+  );
+}
+/* The globe's radius is stage height / (2 tan(25deg) sqrt(8)), from the
+   camera FOV 50 at distance 300, so the stage is 1.3189x the diameter and
+   centered on the area. MagicRings reads the same height, so the entry wave
+   always matches the globe. The canvas is transparent where it overflows. */
+.nm-landing-globe-stage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  --stage-height: calc(var(--globe-diameter) * 1.3189);
+  height: var(--stage-height);
+  top: calc(50cqh - var(--stage-height) / 2);
   touch-action: pan-y;
 }
 .nm-landing-globe-stage:focus-visible {
@@ -133,9 +142,8 @@
     max-width: 340px;
     font-size: 34px;
   }
-  .nm-landing-globe-stage {
-    width: calc(100% + 32px);
-    margin: auto -16px;
+  .nm-landing-globe-area {
+    margin: 0 -16px;
   }
 }
 
