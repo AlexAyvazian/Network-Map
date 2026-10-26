@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { initializeDualMapEngines, cleanupDualMapEngines, getActiveMapboxMap } from './dualMapEngineRuntime';
 import * as topojson from 'topojson-client';
 import * as XLSX from 'xlsx';
+import { hasMapboxToken, mapboxGeocode, mapboxReverseCityRegion } from './mapboxServices';
+import { csvRow } from './lib/spreadsheetSafety';
 import {
   Activity,
   Check,
@@ -1120,12 +1122,18 @@ export default function App() {
   // Live finder state
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveResults, setLiveResults] = useState<any[]>([]);
-  const [liveFilter, setLiveFilter] = useState<string>('all');
   const [liveTextFilter, setLiveTextFilter] = useState('');
   const [liveRegionFilter, setLiveRegionFilter] = useState<'all'|'us'|'intl'>('all');
   const [liveSort, setLiveSort] = useState<'distance'|'name'>('distance');
   const [liveLocation, setLiveLocation] = useState('');
   const [liveRadius, setLiveRadius] = useState(10); // miles
+  // Read by doLiveSearch so a search started from a slider commit always uses
+  // the committed value, not the radius captured by an older render.
+  const liveRadiusRef = useRef(10);
+  const liveRadiusInputRef = useRef<HTMLInputElement>(null);
+  // Monotonic request ids: only the newest search may write results.
+  const liveSearchSeqRef = useRef(0);
+  const npiSearchSeqRef = useRef(0);
   const [liveBackendCategory, setLiveBackendCategory] = useState<'all'|'clinical'|'occMed'|'hospital'|'clinic'|'doctor'|'urgent'|'lab'|'pharmacy'|'dentist'|'eye'|'dotExam'|'faaMedical'>('clinical');
   const [liveFacets, setLiveFacets] = useState<Record<string, number>>({});
   const [livePriorityCounts, setLivePriorityCounts] = useState<any>(null);
@@ -1359,9 +1367,10 @@ export default function App() {
         }));
     if (!rows.length) return;
     const headers = ['name','address','type','distance_miles','phone','website','source'];
-    const quote = (value:unknown) => `"${String(value ?? '').replace(/"/g,'""')}"`;
-    const csv = [headers.join(','), ...rows.map(row => headers.map(key => quote((row as any)[key])).join(','))].join('\n');
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    // csvRow neutralises leading = + - @ (OWASP CSV Injection guidance) and
+    // RFC 4180 rows end in CRLF. The BOM lets Excel detect UTF-8.
+    const csv = [csvRow(headers), ...rows.map(row => csvRow(headers.map(key => (row as any)[key])))].join('\r\n');
+    const blob = new Blob(['\uFEFF', csv], {type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2514,6 +2523,9 @@ export default function App() {
     const categoryForSearch = categoryOverride || liveBackendCategoryRef.current;
     const map=getActiveMapboxMap();
     if(!map) return;
+    const seq=++liveSearchSeqRef.current;
+    const isStale=()=>seq!==liveSearchSeqRef.current;
+    const radiusMiles=liveRadiusRef.current;
     providerEta.clear();
     const validCoordinates = Number.isFinite(lat) && Number.isFinite(lng)
       && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
@@ -2543,14 +2555,14 @@ export default function App() {
     setNpiError('');
     lastRadiusRef.current={lat,lng};
     setLiveLocation(selectedLocationLabel || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-    setLiveFinderSearchOverlay({lat,lng}, liveRadius);
-    setLiveSearchRadius(liveRadius);
+    setLiveFinderSearchOverlay({lat,lng}, radiusMiles);
+    setLiveSearchRadius(radiusMiles);
 
     try {
       const backendParams=new URLSearchParams({
         lat:String(lat),
         lng:String(lng),
-        radiusMiles:String(liveRadius),
+        radiusMiles:String(radiusMiles),
         category:categoryForSearch,
         ...(forceRefresh ? {forceRefresh:'true'} : {}),
       });
@@ -2570,11 +2582,12 @@ export default function App() {
       const autosaveHit=Boolean(backendData?.cacheHit) && !forceRefresh;
       if(!autosaveHit) {
         const cityState=await reverseGeocodeCityState(lat,lng).catch(()=>null);
+        if(isStale()) return;
         setLiveLocation(selectedLocationLabel || cityState?.display || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
         const enhancedParams=new URLSearchParams({
           lat:String(lat),
           lng:String(lng),
-          radiusMiles:String(liveRadius),
+          radiusMiles:String(radiusMiles),
           category:categoryForSearch,
           ...(cityState ? {city:cityState.city,state:cityState.state} : {}),
           ...(googlePlacesTrigger ? {googlePlacesTrigger} : {}),
@@ -2585,6 +2598,7 @@ export default function App() {
         } catch {}
       }
 
+      if(isStale()) return;
       if (!backendData && !enhancedData) {
         throw new Error('All search sources failed');
       }
@@ -2631,12 +2645,13 @@ export default function App() {
       const cacheText = autosaveHit ? ' · external live calls avoided' : '';
       setLiveMirror(`${providerText}${categoryText}${savedText}${cacheText}`);
     } catch(err) {
+      if(isStale()) return;
       console.warn('[LiveFinder] All search sources failed',err);
       setLiveHint('');
       setLiveError('Could not reach any provider source for this location. Try a larger radius or a different spot.');
       setLiveMirror('');
     } finally {
-      setLiveLoading(false);
+      if(!isStale()) setLiveLoading(false);
     }
   }
 
@@ -2676,12 +2691,27 @@ export default function App() {
         return{city,state,display:`${city}${state?` · ${state}`:''}`};
       } catch{return null;}
     }
+    // Mapbox returns the ISO 3166-2 region code directly (e.g. "US-TX"),
+    // which is what the NPPES API's `state` parameter expects.
+    if (hasMapboxToken()) {
+      try {
+        const place=await mapboxReverseCityRegion({lat,lng});
+        if(place?.city && place.regionCode) {
+          return{city:place.city,state:place.regionCode,display:`${place.city} · ${place.regionCode}`};
+        }
+      } catch{}
+    }
     try {
-      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=12`,{headers:{'Accept-Language':'en'}});
+      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${lat}&lon=${lng}&zoom=12`,{headers:{'Accept-Language':'en'},signal:AbortSignal.timeout(8000)});
       const d=await r.json();
       const a=d.address||{};
-      const city=a.city||a.town||a.village||a.county||'';
-      const state=a.state_code||a.state||a.country||'';
+      const city=a.city||a.town||a.village||a.municipality||a.county||'';
+      // Nominatim has no `state_code`; the subdivision code is in
+      // `ISO3166-2-lvl4` (e.g. "US-TX"). Fall back to the state-name table.
+      const iso=String(a['ISO3166-2-lvl4']||'');
+      const state=(iso.includes('-')?iso.split('-')[1]:'')
+        || NAME2CODE[String(a.state||'').toLowerCase()]
+        || a.state || a.country || '';
       if(!city) return null;
       return{city,state,display:`${city}${state?` · ${state}`:''}`};
     } catch{return null;}
@@ -2701,16 +2731,19 @@ export default function App() {
       setNpiError('The NPI Registry is a U.S.-only data source. Select a location inside the United States to search it.');
       return;
     }
-    const loc=await reverseGeocodeCityState(centerLat,centerLng);
-    if(!loc){
-      setNpiError('Could not resolve a U.S. city/state for this location. Try clicking nearer a city.');
-      return;
-    }
+    const seq=++npiSearchSeqRef.current;
     setNpiLoading(true);
     setNpiError('');
     setNpiResults([]);
     setNpiSearchMeta(null);
     setNpiCategory(category);
+    const loc=await reverseGeocodeCityState(centerLat,centerLng);
+    if(seq!==npiSearchSeqRef.current) return;
+    if(!loc || !/^[A-Z]{2}$/.test(loc.state)){
+      setNpiLoading(false);
+      setNpiError('Could not resolve a U.S. city and state for this location. Try clicking nearer a city.');
+      return;
+    }
     try{
       const response=await searchProviderSources({
         city:loc.city,
@@ -2720,6 +2753,7 @@ export default function App() {
         centerLat,
         centerLng,
       });
+      if(seq!==npiSearchSeqRef.current) return;
       if(response.audit.errorsBySource && Object.keys(response.audit.errorsBySource).length > 0){
         const firstError = String(Object.values(response.audit.errorsBySource)[0]);
         setNpiError(firstError);
@@ -2728,10 +2762,11 @@ export default function App() {
       setNpiSearchMeta(response.audit);
       setNpiUnifiedResponse(response);
     } catch(e:any){
+      if(seq!==npiSearchSeqRef.current) return;
       setNpiError(e?.message||'NPI search failed. Please try again.');
       console.warn('[NPI Category Search] Failed',e);
     } finally{
-      setNpiLoading(false);
+      if(seq===npiSearchSeqRef.current) setNpiLoading(false);
     }
   }
 
@@ -2745,23 +2780,25 @@ export default function App() {
       setNpiError('The NPI Registry is a U.S.-only data source. Select a location inside the United States to search it.');
       return;
     }
-    const loc=await reverseGeocodeCityState(centerLat,centerLng);
-    if(!loc){
-      setNpiError('Could not resolve a U.S. city/state for this location. Try clicking nearer a city.');
-      return;
-    }
-
     // Validate at least one search parameter is provided
     if(!customOrgName && !customFirstName && !customLastName && !customTaxonomyDesc && !customTaxonomyCode){
       setNpiError('Please enter at least one search parameter (organization name, provider name, or taxonomy).');
       return;
     }
 
+    const seq=++npiSearchSeqRef.current;
     setNpiLoading(true);
     setNpiError('');
     setNpiResults([]);
     setNpiSearchMeta(null);
     setNpiCategory('custom');
+    const loc=await reverseGeocodeCityState(centerLat,centerLng);
+    if(seq!==npiSearchSeqRef.current) return;
+    if(!loc || !/^[A-Z]{2}$/.test(loc.state)){
+      setNpiLoading(false);
+      setNpiError('Could not resolve a U.S. city and state for this location. Try clicking nearer a city.');
+      return;
+    }
 
     const params: NpiCustomSearchParams = {
       city: loc.city,
@@ -2780,6 +2817,7 @@ export default function App() {
 
     try{
       const response = await searchNpiCustom(params);
+      if(seq!==npiSearchSeqRef.current) return;
       if(response.error){
         setNpiError(response.error);
       }
@@ -2795,10 +2833,11 @@ export default function App() {
         errorsBySource: {},
       } as SearchAudit);
     } catch(e:any){
+      if(seq!==npiSearchSeqRef.current) return;
       setNpiError(e?.message||'Custom NPI search failed. Please try again.');
       console.warn('[Custom NPI Search] Failed',e);
     } finally{
-      setNpiLoading(false);
+      if(seq===npiSearchSeqRef.current) setNpiLoading(false);
     }
   }
 
@@ -2837,8 +2876,7 @@ export default function App() {
   }
 
   function renderLiveMarkers(results:any[]) {
-    const filtered=liveFilter==='all'?results:results.filter(r=>r.cat===liveFilter);
-    const points:NativeLivePoint[]=filtered.slice(0,750).map((r:any)=>{
+    const points:NativeLivePoint[]=results.slice(0,750).map((r:any)=>{
       const c=CATS[r.cat]||CATS.clinic;
       const gmUrl=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name+(r.addr?' '+r.addr:''))}`;
       const popupHtml=`<div style="font-family:-apple-system, BlinkMacSystemFont, system-ui, sans-serif;padding:10px 12px;min-width:190px;">
@@ -2860,7 +2898,6 @@ export default function App() {
   function filterAndSortLiveResults(results:any[]) {
     const q=liveTextFilter.trim().toLowerCase();
     const filtered=results
-      .filter(r=>liveFilter==='all' ? true : r.cat===liveFilter)
       .filter(r=>q ? `${r.name||''} ${r.addr||''} ${r.cat||''}`.toLowerCase().includes(q) : true)
       .filter(r=>{
         if(liveRegionFilter==='all') return true;
@@ -2889,7 +2926,25 @@ export default function App() {
     const filtered=filterAndSortLiveResults(liveResults);
     renderLiveMarkers(filtered);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[findMode, liveFilter, liveTextFilter, liveResults, liveRegionFilter, liveSort, showGlowPoints, npiCategory, npiResults]);
+  },[findMode, liveTextFilter, liveResults, liveRegionFilter, liveSort, showGlowPoints, npiCategory, npiResults]);
+
+  // Re-run Live Finder when the radius is committed. The DOM `change` event on
+  // a range input fires once the user finishes changing the value (pointer
+  // release, touch end, or a keyboard step), whereas React's onChange is the
+  // per-movement `input` event and onMouseUp missed touch and keyboard input.
+  const doLiveSearchRef = useRef(doLiveSearch);
+  useLayoutEffect(()=>{ doLiveSearchRef.current = doLiveSearch; });
+  useEffect(()=>{
+    const input = liveRadiusInputRef.current;
+    if(!input) return;
+    const onCommit = () => {
+      liveRadiusRef.current = Number(input.value);
+      const center = lastRadiusRef.current;
+      if(center) void doLiveSearchRef.current(center.lat, center.lng);
+    };
+    input.addEventListener('change', onCommit);
+    return () => input.removeEventListener('change', onCommit);
+  },[findMode, sidebarWorkspace]);
 
   function lpFly(lat:number,lng:number,id:any) {
     flyToNativeLivePoint(String(id),lat,lng);
@@ -2903,28 +2958,67 @@ export default function App() {
 
   // ── Address search / geocode ─────────────────────────────────────────────
   const addrDebounceRef = useRef<ReturnType<typeof setTimeout>|null>(null);
+  const addrSearchSeqRef = useRef(0);
+  // Suggestions come from the Mapbox Geocoding API, which supports
+  // type-ahead (`autocomplete=true` is its default). The public Nominatim
+  // usage policy forbids client-side autocomplete, so Nominatim is only used
+  // as a one-shot lookup on Enter when no Mapbox token is configured.
+  async function fetchAddrSuggestions(query: string, seq: number) {
+    setAddrLoading(true);
+    try {
+      let rows: Array<{display_name:string;lat:string;lon:string}> = [];
+      if (hasMapboxToken()) {
+        const center = getActiveMapboxMap()?.getCenter();
+        const places = await mapboxGeocode(query, center ? {lat:center.lat,lng:center.lng} : undefined, {limit:5});
+        rows = places.map(place => ({display_name:place.placeName,lat:String(place.lat),lon:String(place.lng)}));
+      } else {
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`, { headers: {'Accept-Language':'en'}, signal: AbortSignal.timeout(8000) });
+        const data = await r.json();
+        rows = Array.isArray(data) ? data : [];
+      }
+      if (seq !== addrSearchSeqRef.current) return rows;
+      setAddrSuggestions(rows);
+      setAddrError(rows.length ? '' : 'No matching places found.');
+      return rows;
+    } catch {
+      if (seq === addrSearchSeqRef.current) { setAddrSuggestions([]); setAddrError('Address search is unavailable right now.'); }
+      return [];
+    } finally {
+      if (seq === addrSearchSeqRef.current) setAddrLoading(false);
+    }
+  }
   function handleAddrInput(val: string) {
     setAddrSearch(val);
     setAddrError('');
     if (addrDebounceRef.current) clearTimeout(addrDebounceRef.current);
-    if (!val.trim() || val.length < 3) { setAddrSuggestions([]); return; }
-    addrDebounceRef.current = setTimeout(async () => {
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(val)}`;
-        const r = await fetch(url, { headers: {'Accept-Language':'en'} });
-        const data = await r.json();
-        setAddrSuggestions(data);
-      } catch { setAddrSuggestions([]); }
-    }, 380);
+    const seq = ++addrSearchSeqRef.current;
+    if (!val.trim() || val.trim().length < 3) { setAddrSuggestions([]); setAddrLoading(false); return; }
+    if (!hasMapboxToken()) { setAddrSuggestions([]); return; }
+    addrDebounceRef.current = setTimeout(() => { void fetchAddrSuggestions(val.trim(), seq); }, 300);
+  }
+  async function submitAddrSearch() {
+    const query = addrSearch.trim();
+    if (!query) return;
+    if (addrDebounceRef.current) clearTimeout(addrDebounceRef.current);
+    const first = addrSuggestions[0];
+    if (first) { jumpToAddr(first.lat, first.lon, first.display_name); return; }
+    const seq = ++addrSearchSeqRef.current;
+    const rows = await fetchAddrSuggestions(query, seq);
+    if (seq === addrSearchSeqRef.current && rows[0]) jumpToAddr(rows[0].lat, rows[0].lon, rows[0].display_name);
   }
   function jumpToAddr(lat: string, lon: string, name: string) {
     const map = getActiveMapboxMap();
     if (!map) return;
     const lLat = parseFloat(lat);
     const lLng = parseFloat(lon);
+    if (!Number.isFinite(lLat) || !Number.isFinite(lLng)) return;
+    addrSearchSeqRef.current++;
+    if (addrDebounceRef.current) clearTimeout(addrDebounceRef.current);
+    setAddrLoading(false);
     flyNativeMap(lLat,lLng,13,1200);
     setAddrSearch(name.split(',').slice(0,2).join(','));
     setAddrSuggestions([]);
+    setAddrError('');
     const popupHtml=`<div class="pi"><div class="pt">${escapeHtml(name.split(',')[0])}</div><div class="ps">Address Search Result</div></div>`;
     setNativeAddressPin({lat:lLat,lng:lLng,color:'#7bd7ff',popupHtml});
     openNativeMapPopup(lLat,lLng,popupHtml,'260px');
@@ -3185,7 +3279,7 @@ export default function App() {
                 <div className="find-section-glow-label">FILTERS</div>
                 <div style={{display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:9.5,color:'#3d5478',whiteSpace:'nowrap'}}>Radius:</span>
-                  <input type="range" min={1} max={50} value={liveRadius} onChange={e=>setLiveRadius(Number(e.target.value))} onMouseUp={()=>{ if(lastRadiusRef.current) doLiveSearch(lastRadiusRef.current.lat,lastRadiusRef.current.lng); }}/>
+                  <input ref={liveRadiusInputRef} type="range" min={1} max={50} value={liveRadius} aria-label="Live search radius in miles" onChange={e=>{const next=Number(e.target.value);liveRadiusRef.current=next;setLiveRadius(next);}}/>
                   <span style={{fontFamily:'var(--p1-font)',fontSize:10,color:'#89d4fe',whiteSpace:'nowrap'}}>{liveRadius} mi</span>
                 </div>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'6px 8px',borderRadius:8,background:'rgba(125,211,252,0.06)',border:'1px solid rgba(125,211,252,0.18)'}}>
@@ -3268,11 +3362,11 @@ export default function App() {
                   <>
                     <div className="find-section-glow-label">U.S. NPI REGISTRY</div>
                     <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-                      <button className={`lp-chip${!npiCategory?' on':''}`} onClick={()=>{setLiveFilter('all');setNpiCategory(null);setNpiResults([]);setNpiError('');setNpiSearchMeta(null);setShowCustomSearch(false);}}>All</button>
+                      <button className={`lp-chip${!npiCategory?' on':''}`} onClick={()=>{setNpiCategory(null);setNpiResults([]);setNpiError('');setNpiSearchMeta(null);setShowCustomSearch(false);}}>All</button>
                       {NPI_CATEGORY_KEYS.map((cat)=>{
                         const c=NPI_CATEGORY_MAP[cat];
                         return (
-                          <button key={cat} className={`lp-chip${npiCategory===cat?' on':''}`} onClick={()=>{setLiveFilter(cat);doNpiCategorySearch(cat);setShowCustomSearch(false);}}>{c.icon} {c.label}</button>
+                          <button key={cat} className={`lp-chip${npiCategory===cat?' on':''}`} onClick={()=>{doNpiCategorySearch(cat);setShowCustomSearch(false);}}>{c.icon} {c.label}</button>
                         );
                       })}
                       <button className={`lp-chip${npiCategory==='custom'?' on':''}`} onClick={()=>{setShowCustomSearch(!showCustomSearch);setNpiCategory(null);setNpiResults([]);setNpiError('');}}> Custom NPI</button>
@@ -3765,13 +3859,19 @@ export default function App() {
               className="floating-search-input"
               value={addrSearch}
               onChange={event=>handleAddrInput(event.target.value)}
-              onKeyDown={event=>{ if(event.key==='Escape'){setAddrSearch('');setAddrSuggestions([]);} }}
+              onKeyDown={event=>{
+                if(event.key==='Escape'){ addrSearchSeqRef.current++; setAddrSearch('');setAddrSuggestions([]);setAddrError(''); }
+                else if(event.key==='Enter'){ event.preventDefault(); void submitAddrSearch(); }
+              }}
               placeholder="Search any address, city, or landmark…"
               aria-label="Search map"
             />
             {addrLoading && <LoaderCircle className="command-spin floating-search-spinner" size={15} aria-label="Searching"/>}
             {addrSearch && !addrLoading && (
-              <button className="command-search-clear floating-search-clear" aria-label="Clear map search" onClick={()=>{setAddrSearch('');setAddrSuggestions([]);}}><X size={14}/></button>
+              <button className="command-search-clear floating-search-clear" aria-label="Clear map search" onClick={()=>{addrSearchSeqRef.current++;setAddrSearch('');setAddrSuggestions([]);setAddrError('');}}><X size={14}/></button>
+            )}
+            {addrError && !addrLoading && addrSuggestions.length===0 && (
+              <div className="floating-search-results" role="status"><span style={{padding:'8px 12px'}}>{addrError}</span></div>
             )}
             {addrSuggestions.length>0 && (
               <div className="floating-search-results">

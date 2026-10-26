@@ -159,7 +159,7 @@ assert.doesNotMatch(
 assert.match(appSource, /className="result-card-select"/, "result cards must select providers through a native button");
 assert.doesNotMatch(appSource, /className=\{?[`"]result-card[^"`]*[`"]\}? onClick=/, "result cards must not be clickable non-semantic wrappers around their actions");
 assert.match(appSource, /className="results-location"/, "Results must show the search location that produced the set");
-assert.match(appSource, /setLiveSearchRadius\(liveRadius\)/, "the Results location must come from the explicit search state, not provider rows");
+assert.match(appSource, /setLiveSearchRadius\(radiusMiles\)/, "the Results location must come from the explicit search state, not provider rows");
 assert.match(workspaceCss, /:not\(\.result-card-select\) \{/, "the card map-focus button must stay outside the shared button skin");
 assert.match(workspaceCss, /\.results-list \{[\s\S]*padding-bottom: 12px;/, "the last result card must clear the sidebar's bottom edge");
 assert.match(uiAcceptance, /assertResultsCards\(page, viewport\.name\)/, "browser acceptance must scroll Results to the last card at every viewport");
