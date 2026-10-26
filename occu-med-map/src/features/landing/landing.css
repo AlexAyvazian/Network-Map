@@ -2,7 +2,7 @@
   position: relative;
   isolation: isolate;
   color: #fff;
-  background: #000;
+  background: radial-gradient(ellipse at 50% 60%, #050b24 0%, #000 70%);
   font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   height: 100%;
   min-height: 100%;
@@ -11,16 +11,54 @@
   flex-direction: column;
   align-items: center;
   overflow: hidden;
-  padding: clamp(28px, 4vh, 48px) 20px 0;
+  padding: clamp(22px, 3.5vh, 40px) 20px 0;
 }
-/* Match the Service Map Atlas landing: sparse, static stars behind all entrance content. */
+/* Bright steady star field behind all entrance content. */
 .nm-landing::before {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   pointer-events: none;
   background: url("./stars.svg") center top / 1440px 1000px repeat;
+}
+/* Two offset layers fade in and out so different stars twinkle. */
+.nm-landing-stars {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.nm-landing-twinkle {
+  position: absolute;
+  inset: 0;
+  opacity: 0.25;
+  animation: nm-landing-twinkle 3.6s ease-in-out infinite alternate;
+}
+.nm-landing-twinkle-a {
+  background: url("./stars-twinkle-a.svg") center top / 1440px 1000px repeat;
+}
+.nm-landing-twinkle-b {
+  background: url("./stars-twinkle-b.svg") center top / 1440px 1000px repeat;
+  animation-duration: 4.8s;
+  animation-delay: -2.4s;
+}
+@keyframes nm-landing-twinkle {
+  0% {
+    opacity: 0.15;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nm-landing-twinkle {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 .nm-landing-branding {
   width: 100%;
@@ -29,30 +67,34 @@
   align-items: center;
   position: relative;
   z-index: 1;
-}
-.nm-landing-logo {
-  width: clamp(220px, 20vw, 270px);
-  aspect-ratio: 645 / 352;
-  height: auto;
-  display: block;
-  margin: 0 auto 18px;
+  flex: none;
 }
 .nm-landing h1 {
-  font-size: clamp(40px, 4.7vw, 64px);
+  font-size: clamp(34px, 4.2vw, 58px);
   font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.035em;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   text-align: center;
   margin: 0;
+  background: linear-gradient(180deg, #ffffff 30%, #a5c4ef 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 28px rgba(120, 160, 255, 0.25);
 }
+/* The globe fills the space under the title. Its radius is derived from the
+   stage height (camera FOV 50, distance 300), and MagicRings reads the same
+   height, so the entry wave always matches the globe. */
 .nm-landing-globe-stage {
-  width: min(860px, 100vw);
-  --globe-height: min(740px, max(340px, calc(100svh - 400px)));
-  height: var(--globe-height);
-  flex: none;
-  min-height: 340px;
+  flex: 1 1 auto;
+  width: calc(100% + 40px);
+  /* auto centers the globe vertically when max-height caps it on narrow
+     screens, where the vertical FOV would otherwise make it wider than the page. */
+  margin: auto -20px;
+  min-height: 300px;
+  max-height: calc(100vw * 1.15);
   position: relative;
-  margin: calc(var(--globe-height) * -0.12 + 14px) auto 0;
+  align-self: center;
   touch-action: pan-y;
 }
 .nm-landing-globe-stage:focus-visible {
@@ -70,11 +112,12 @@
 }
 .nm-landing-loading {
   position: absolute;
-  width: 65%;
+  height: 76%;
   aspect-ratio: 1;
   border-radius: 50%;
-  left: 17.5%;
-  top: 12%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   background: radial-gradient(circle at 65% 30%, #061c52, #020618 70%);
 }
 .nm-landing-fallback {
@@ -84,32 +127,26 @@
 }
 @media (max-width: 600px) {
   .nm-landing {
-    padding: 28px 16px 0;
-  }
-  .nm-landing-logo {
-    width: 260px;
-    margin-bottom: 18px;
+    padding: 24px 16px 0;
   }
   .nm-landing h1 {
-    max-width: 360px;
-    font-size: 38px;
+    max-width: 340px;
+    font-size: 34px;
   }
   .nm-landing-globe-stage {
-    --globe-height: 100vw;
-    width: 100vw;
-    height: var(--globe-height);
-    min-height: 0;
-    margin: calc(var(--globe-height) * -0.12 + 14px) -16px 0;
+    width: calc(100% + 32px);
+    margin: auto -16px;
   }
 }
 
 .nm-landing-enter {
-  position: relative;
+  position: absolute;
+  right: clamp(16px, 3vw, 44px);
+  bottom: clamp(16px, 4vh, 44px);
   z-index: 2;
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: 18px;
   padding: 12px 24px;
   border: 1px solid #4358b0;
   border-radius: 999px;
@@ -134,13 +171,11 @@
 .nm-landing-enter:disabled {
   cursor: default;
 }
+/* The stage already spans the page under the title, so the rings canvas only
+   needs to cover it. A 200% canvas was 4x the pixels to shade per frame. */
 .nm-landing-rings {
   position: absolute;
-  width: 200%;
-  height: 200%;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
   z-index: 1;
   pointer-events: none;
 }

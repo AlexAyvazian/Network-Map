@@ -8,7 +8,6 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import { logo } from "./logo";
 import "./landing.css";
 import { MagicRings } from "./MagicRings";
 const World = lazy(() =>
@@ -144,16 +143,12 @@ export function NetworkMapLanding({ onEnter }: { onEnter: () => void }) {
   }, []);
   return (
     <main className="nm-landing">
+      <div className="nm-landing-stars" aria-hidden="true">
+        <span className="nm-landing-twinkle nm-landing-twinkle-a" />
+        <span className="nm-landing-twinkle nm-landing-twinkle-b" />
+      </div>
       <header className="nm-landing-branding">
-        <svg
-          className="nm-landing-logo"
-          viewBox="203 139 645 352"
-          role="img"
-          aria-label="Occu-Med"
-        >
-          <image href={logo} width="1024" height="683" />
-        </svg>
-        <h1>Network Management Map</h1>
+        <h1>Global Health Directory Map</h1>
       </header>
       <button
         className="nm-landing-enter"
