@@ -13,7 +13,6 @@ on:
       - "scripts/import-official-registry.sh"
   schedule:
     - cron: "5 11 6 * *" # monthly REFES source refresh
-    - cron: "17 13 * * *" # bounded daily email candidate discovery
 
 permissions:
   contents: read
@@ -25,7 +24,7 @@ concurrency:
 
 jobs:
   sync:
-    if: github.event.schedule != '17 13 * * *'
+    if: github.event_name != 'push' # prevent workflow-file edits from launching a registry import
     name: Download and promote official REFES registry
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -134,39 +133,3 @@ jobs:
           (( mapped_count >= 4000 )) || { echo "Only ${mapped_count} providers map-renderable" >&2; exit 1; }
           echo "Argentina REFES map-renderable providers: ${mapped_count}"
 
-  enrich:
-    # Daily contact scans must never trigger a REFES snapshot refresh.
-    # Monthly and explicitly dispatched syncs must succeed first.
-    if: ${{ always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && (needs.sync.result == 'success' || needs.sync.result == 'skipped') }}
-    needs: [sync]
-    name: Collect facility email candidates without modifying REFES
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    steps:
-      - name: Check out enrichment code
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Resolve Argentina registry through existing OIDC broker
-        uses: ./.github/actions/resolve-registry-database
-        with:
-          source: argentina-refes
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install crawler PostgreSQL client
-        run: |
-          python -m pip install --disable-pip-version-check 'psycopg[binary]>=3.2,<3.4'
-          sudo apt-get update -qq
-          sudo apt-get install --yes --no-install-recommends postgresql-client
-      - name: Test email attribution guards
-        run: python -m unittest discover -s scripts/tests -p 'test_argentina_contact_email_crawl.py' -v
-      - name: Ensure additive multi-email schema exists
-        run: |
-          set -euo pipefail
-          [[ "$TARGET_DATABASE_URL" == postgres* ]] || exit 1
-          echo "::add-mask::${TARGET_DATABASE_URL}"
-          psql "$TARGET_DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/official-registry-contact-enrichment.sql >/dev/null
-      - name: Scan next 120 website records; leave unreviewed emails unpublished
-        run: python scripts/argentina-contact-email-crawl.py --apply --limit 120 --retry-after-days 90 --pause-seconds 0.7
