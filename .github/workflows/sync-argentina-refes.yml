@@ -12,7 +12,7 @@ on:
       - "scripts/official-registry-schema.sql"
       - "scripts/import-official-registry.sh"
   schedule:
-    - cron: "5 11 6 * *" # monthly REFES source refresh
+    - cron: "5 11 6 * *"
 
 permissions:
   contents: read
@@ -24,7 +24,6 @@ concurrency:
 
 jobs:
   sync:
-    if: github.event_name != 'push' # prevent workflow-file edits from launching a registry import
     name: Download and promote official REFES registry
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -132,4 +131,3 @@ jobs:
           [[ "$mapped_count" == "$REGISTRY_EXPECTED" ]] || { echo "Registry count mismatch ${mapped_count}" >&2; exit 1; }
           (( mapped_count >= 4000 )) || { echo "Only ${mapped_count} providers map-renderable" >&2; exit 1; }
           echo "Argentina REFES map-renderable providers: ${mapped_count}"
-
