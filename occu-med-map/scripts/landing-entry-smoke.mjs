@@ -87,8 +87,8 @@ try {
       "Rings must not run before entry",
     );
     const geometry = await page.evaluate(() => {
-      const logo = document
-        .querySelector(".nm-landing-logo")
+      const title = document
+        .querySelector(".nm-landing h1")
         .getBoundingClientRect();
       const stage = document
         .querySelector(".nm-landing-globe-stage")
@@ -98,15 +98,36 @@ try {
         .getBoundingClientRect();
       const radius =
         stage.height / (2 * Math.tan((25 * Math.PI) / 180) * Math.sqrt(8));
+      const globeTop = stage.top + stage.height / 2 - radius;
       return {
-        logoOffset: Math.abs((logo.left + logo.right) / 2 - innerWidth / 2),
-        globeGap: stage.top + stage.height / 2 - radius - button.bottom,
+        logoCount: document.querySelectorAll(".nm-landing-logo").length,
+        titleText: document.querySelector(".nm-landing h1").textContent,
+        titleOffset: Math.abs((title.left + title.right) / 2 - innerWidth / 2),
+        titleTop: title.top,
+        titleGap: globeTop - title.bottom,
+        globeDiameter: radius * 2,
+        globeBottomGap: innerHeight - (stage.top + stage.height / 2 + radius),
+        buttonRightGap: innerWidth - button.right,
+        buttonBottomGap: innerHeight - button.bottom,
       };
     });
-    assert.ok(geometry.logoOffset <= 1, "Logo must be centered");
+    assert.equal(geometry.logoCount, 0, "Occu-Med logo is removed");
+    assert.equal(geometry.titleText, "Global Health Directory Map");
+    assert.ok(geometry.titleOffset <= 1, "Title must be centered");
+    assert.ok(geometry.titleTop <= 60, "Title must sit at the top of the page");
     assert.ok(
-      geometry.globeGap >= 0 && geometry.globeGap <= 25,
-      "Globe must sit close beneath the entry button",
+      geometry.titleGap >= 0 && geometry.titleGap <= 40,
+      `Globe must sit just under the title (gap ${Math.round(geometry.titleGap)}px)`,
+    );
+    assert.ok(geometry.globeBottomGap >= 0, "Globe must fit on the page");
+    assert.ok(
+      geometry.globeDiameter >= 640,
+      `Globe must be enlarged (diameter ${Math.round(geometry.globeDiameter)}px)`,
+    );
+    assert.ok(
+      geometry.buttonRightGap >= 0 && geometry.buttonRightGap <= 60 &&
+        geometry.buttonBottomGap >= 0 && geometry.buttonBottomGap <= 60,
+      "Enter Map must sit in the bottom-right corner",
     );
     if (stalledFrames) {
       await page.evaluate(() => {
@@ -144,9 +165,12 @@ try {
           path: process.env.NETWORK_MAP_LANDING_SCREENSHOT,
         });
     }
+    // Leaving the landing page mounts the full app and Mapbox, which takes
+    // ~9-10s under SwiftShader even on main before this change, so 12s was
+    // flaky on CI runners. The wave itself is bounded by MagicRings' deadline.
     await page
       .locator(".nm-landing")
-      .waitFor({ state: "detached", timeout: 12000 });
+      .waitFor({ state: "detached", timeout: 25000 });
     await page
       .locator(".app-wrap")
       .waitFor({ state: "visible", timeout: 20000 });
@@ -175,7 +199,7 @@ try {
     "Entry must not raise uncaught JavaScript errors",
   );
   console.log(
-    "Landing entry passed: centered logo, tight globe spacing, globe-centered one-shot rings, real map entry, and reduced motion.",
+    "Landing entry passed: top title, enlarged globe, bottom-right entry button, globe-centered one-shot rings, real map entry, and reduced motion.",
   );
 } finally {
   await browser.close();

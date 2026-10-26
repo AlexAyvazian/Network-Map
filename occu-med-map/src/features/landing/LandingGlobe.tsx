@@ -41,6 +41,9 @@ type WorldProps = {
   globeConfig: GlobeConfig;
   data: Position[];
   reducedMotion?: boolean;
+  // Stops rendering (the last frame stays on screen) so the entry wave gets
+  // the main thread instead of competing with globe frames.
+  paused?: boolean;
 };
 function Globe({ globeConfig: config, data, reducedMotion }: WorldProps) {
   const globe = useMemo(() => new ThreeGlobe({ animateIn: false }), []);
@@ -130,6 +133,7 @@ export function World(props: WorldProps) {
   return (
     <Canvas
       dpr={[1, 1.5]}
+      frameloop={props.paused ? "never" : "always"}
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: 50, near: 0.1, far: 1800, position }}
     >

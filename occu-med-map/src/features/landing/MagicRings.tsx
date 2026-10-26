@@ -139,7 +139,9 @@ export function MagicRings({ onComplete }: { onComplete: () => void }) {
     });
     scene.add(new THREE.Mesh(geometry, material));
     const resize = () => {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      // The wave is a soft glow, so half resolution looks the same and
+      // shades a quarter of the pixels on every frame.
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2) * 0.5);
       renderer.setSize(mount.clientWidth, mount.clientHeight);
       renderer.getDrawingBufferSize(uniforms.uResolution.value);
       // Derive the globe silhouette from the same camera radius and FOV.

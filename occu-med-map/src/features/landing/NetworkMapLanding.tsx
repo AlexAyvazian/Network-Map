@@ -8,7 +8,6 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import { logo } from "./logo";
 import "./landing.css";
 import { MagicRings } from "./MagicRings";
 const World = lazy(() =>
@@ -144,16 +143,12 @@ export function NetworkMapLanding({ onEnter }: { onEnter: () => void }) {
   }, []);
   return (
     <main className="nm-landing">
+      <div className="nm-landing-stars" aria-hidden="true">
+        <span className="nm-landing-twinkle nm-landing-twinkle-a" />
+        <span className="nm-landing-twinkle nm-landing-twinkle-b" />
+      </div>
       <header className="nm-landing-branding">
-        <svg
-          className="nm-landing-logo"
-          viewBox="203 139 645 352"
-          role="img"
-          aria-label="Occu-Med"
-        >
-          <image href={logo} width="1024" height="683" />
-        </svg>
-        <h1>Network Management Map</h1>
+        <h1>Global Health Directory Map</h1>
       </header>
       <button
         className="nm-landing-enter"
@@ -163,26 +158,29 @@ export function NetworkMapLanding({ onEnter }: { onEnter: () => void }) {
       >
         Enter Map <span aria-hidden="true">→</span>
       </button>
-      <section
-        className="nm-landing-globe-stage"
-        aria-label="Interactive globe. Drag to rotate."
-        tabIndex={0}
-      >
-        {entering && <MagicRings onComplete={finishEntry} />}
-        <GlobeBoundary>
-          <Suspense
-            fallback={
-              <div className="nm-landing-loading" aria-label="Loading globe" />
-            }
-          >
-            <World
-              globeConfig={activeGlobeConfig}
-              data={data}
-              reducedMotion={reducedMotion}
-            />
-          </Suspense>
-        </GlobeBoundary>
-      </section>
+      <div className="nm-landing-globe-area">
+        <section
+          className="nm-landing-globe-stage"
+          aria-label="Interactive globe. Drag to rotate."
+          tabIndex={0}
+        >
+          {entering && <MagicRings onComplete={finishEntry} />}
+          <GlobeBoundary>
+            <Suspense
+              fallback={
+                <div className="nm-landing-loading" aria-label="Loading globe" />
+              }
+            >
+              <World
+                globeConfig={activeGlobeConfig}
+                data={data}
+                reducedMotion={reducedMotion}
+                paused={entryStarted}
+              />
+            </Suspense>
+          </GlobeBoundary>
+        </section>
+      </div>
     </main>
   );
 }
