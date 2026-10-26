@@ -1,0 +1,53 @@
+name: Enrich Canadian healthcare facility contacts
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/enrich-canada-contacts.yml"
+  schedule:
+    - cron: "23 14 * * *"
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: canada-contacts-enrichment
+  cancel-in-progress: false
+jobs:
+  enrich:
+    name: Canada facility website discovery and multi-email collection
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Check out Network Map contact-enrichment scripts
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Resolve existing dedicated Canada Neon connection via GitHub OIDC
+        uses: ./.github/actions/resolve-registry-database
+        with:
+          source: canada-odhf
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install PostgreSQL client and Python database driver
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+          python -m pip install --disable-pip-version-check 'psycopg[binary]>=3.2,<3.4'
+      - name: Test Canada email extractor and source attribution rules
+        run: python -m unittest discover -s scripts/tests -p 'test_canada_*.py' -v
+      - name: Ensure durable contact and website tables exist
+        run: |
+          set -euo pipefail
+          [[ "$TARGET_DATABASE_URL" == postgres* ]] || exit 1
+          echo "::add-mask::${TARGET_DATABASE_URL}"
+          psql "$TARGET_DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/official-registry-contact-enrichment.sql >/dev/null
+          psql "$TARGET_DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/canada-contact-enrichment.sql >/dev/null
+      - name: Find candidate facility websites from bounded public OSM queries
+        run: |
+          python scripts/canada-contact-site-discovery.py --apply --limit 60 --pause-seconds 1.5
+      - name: Extract every visible email from reviewed facility website pages
+        run: |
+          python scripts/canada-contact-email-crawl.py --apply --limit 120 --pause-seconds 0.8
