@@ -253,13 +253,13 @@ export type MapboxCityRegion = {
  * API rather than from matching state names.
  */
 export async function mapboxReverseCityRegion(point: Point): Promise<MapboxCityRegion | null> {
-  assertToken();
-  const url = addToken(new URL(`https://api.mapbox.com/geocoding/v5/mapbox.places/${point.lng},${point.lat}.json`));
-  url.searchParams.set("types", "place,locality,district");
-  url.searchParams.set("language", "en");
-  const resp = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
-  if (!resp.ok) throw new Error(`Mapbox reverse geocode HTTP ${resp.status}`);
-  const data = await resp.json();
+  const request = sdk().geocoding.reverseGeocode({
+    // The SDK validates a [lng, lat] pair here; its published typings say string.
+    query: [point.lng, point.lat] as unknown as string,
+    types: ["place", "locality", "district"],
+    language: ["en"],
+  });
+  const data = await send<any>(request, "reverse geocode", 8000);
   const features: any[] = Array.isArray(data.features) ? data.features : [];
   const feature = features.find((f) => String(f?.id || "").startsWith("place."))
     || features.find((f) => String(f?.id || "").startsWith("locality."))

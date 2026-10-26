@@ -8,10 +8,15 @@ function dispatchEtaRoute(row: EtaProviderRanking): void {
   window.dispatchEvent(new CustomEvent(ETA_ROUTE_EVENT, { detail: row }));
 }
 
+// Only the most recent route request may draw. A slower Directions response
+// for an earlier selection must not replace the route the user picked last.
+let latestRouteRequest = 0;
+
 // Matrix-ranked rows carry drive times only; the route line is fetched from
 // the Directions API the first time a row's route is requested, then cached
 // on the row.
 export function requestEtaRoute(row: EtaProviderRanking, origin: EtaOrigin | null = getProviderEtaResult()?.origin || null): void {
+  const requestId = ++latestRouteRequest;
   if (row.routeCoordinates.length >= 2 || !origin) {
     dispatchEtaRoute(row);
     return;
@@ -19,7 +24,7 @@ export function requestEtaRoute(row: EtaProviderRanking, origin: EtaOrigin | nul
   void mapboxDirections(origin, row, row.routeProfile)
     .then((route) => {
       row.routeCoordinates = route.coordinates;
-      dispatchEtaRoute(row);
+      if (requestId === latestRouteRequest) dispatchEtaRoute(row);
     })
     .catch((error) => console.warn(`Route to ${row.name} failed`, error));
 }

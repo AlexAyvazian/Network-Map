@@ -107,4 +107,10 @@ assert.match(services, /profile === "driving-traffic" \? 10 : 25/, "Matrix batch
 assert.match(services, /from "@mapbox\/mapbox-sdk\/services\/matrix"/, "Mapbox services must use the official SDK");
 assert.doesNotMatch(services, /reverseGeocode\(\{[^}]*limit/, "reverse geocoding must not send limit without a single type (HTTP 422)");
 
-console.log("Map Tools engine regression smoke passed: style-readiness deferral, panel ownership, ETA publishing, basemap ownership, status scoping, Matrix ranking.");
+// Review finding: a slow Directions response for an earlier Route click must
+// not replace the route the user selected last.
+const routeEvents = source("src/features/driveTime/etaRouteEvents.ts");
+assert.match(routeEvents, /const requestId = \+\+latestRouteRequest;/, "every route request must claim a new request id");
+assert.match(routeEvents, /if \(requestId === latestRouteRequest\) dispatchEtaRoute\(row\)/, "stale Directions responses must not dispatch");
+
+console.log("Map Tools engine regression smoke passed: style-readiness deferral, panel ownership, ETA publishing, basemap ownership, status scoping, Matrix ranking, latest-route-wins.");
