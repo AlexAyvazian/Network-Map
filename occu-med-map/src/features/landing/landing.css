@@ -11,7 +11,9 @@
   flex-direction: column;
   align-items: center;
   overflow: hidden;
-  padding: clamp(14px, 2.2vh, 26px) 20px 0;
+  /* 5% of the height above and below the content: the page reads as a 90%
+     zoom, with equal space at the top and bottom. */
+  padding: 5vh 20px 5vh;
 }
 /* Bright steady star field behind all entrance content. */
 .nm-landing::before {
@@ -70,7 +72,7 @@
   flex: none;
 }
 .nm-landing h1 {
-  font-size: clamp(40px, 5.6vw, 84px);
+  font-size: clamp(36px, 5vw, 76px);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -136,11 +138,11 @@
 }
 @media (max-width: 600px) {
   .nm-landing {
-    padding: 20px 16px 0;
+    padding: 5vh 16px;
   }
   .nm-landing h1 {
     max-width: 360px;
-    font-size: 42px;
+    font-size: 38px;
   }
   .nm-landing-globe-area {
     margin: 0 -16px;
@@ -149,8 +151,8 @@
 
 .nm-landing-enter {
   position: absolute;
-  right: clamp(16px, 3vw, 44px);
-  bottom: clamp(16px, 4vh, 44px);
+  right: max(16px, 3vw);
+  bottom: max(16px, 5vh);
   z-index: 2;
   display: flex;
   align-items: center;
