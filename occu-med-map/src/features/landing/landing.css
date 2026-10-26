@@ -89,21 +89,22 @@
   min-height: 300px;
   container-type: size;
   --globe-gap: clamp(4px, 0.8vh, 10px);
-  /* Fill the height, but never get wider than the page on narrow screens. */
-  --globe-diameter: min(
-    calc(100cqh - 2 * var(--globe-gap)),
-    calc(100cqw - 16px)
+  /* 95% of the space under the title, and never wider than the page on
+     narrow screens. */
+  --globe-diameter: calc(
+    min(calc(100cqh - 2 * var(--globe-gap)), calc(100cqw - 16px)) * 0.95
   );
 }
 /* The globe's radius is stage height / (2 tan(25deg) sqrt(8)), from the
    camera FOV 50 at distance 300, so the stage is 1.3189x the diameter and
    centered on the area. MagicRings reads the same height, so the entry wave
-   always matches the globe. The canvas is transparent where it overflows. */
+   always matches the globe. The stage is square: a full-width WebGL canvas
+   shaded ~50% more pixels every frame for empty space beside the globe. */
 .nm-landing-globe-stage {
   position: absolute;
-  left: 0;
-  right: 0;
   --stage-height: calc(var(--globe-diameter) * 1.3189);
+  width: var(--stage-height);
+  left: calc(50cqw - var(--stage-height) / 2);
   height: var(--stage-height);
   top: calc(50cqh - var(--stage-height) / 2);
   touch-action: pan-y;
@@ -181,11 +182,14 @@
 .nm-landing-enter:disabled {
   cursor: default;
 }
-/* The stage already spans the page under the title, so the rings canvas only
-   needs to cover it. A 200% canvas was 4x the pixels to shade per frame. */
+/* The wave spreads past the square globe stage, so its canvas spans the full
+   area width (cqw resolves against .nm-landing-globe-area). */
 .nm-landing-rings {
   position: absolute;
-  inset: 0;
+  top: 0;
+  height: 100%;
+  width: 100cqw;
+  left: calc(50% - 50cqw);
   z-index: 1;
   pointer-events: none;
 }

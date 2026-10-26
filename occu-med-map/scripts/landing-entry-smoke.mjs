@@ -121,7 +121,7 @@ try {
     );
     assert.ok(geometry.globeBottomGap >= 0, "Globe must fit on the page");
     assert.ok(
-      geometry.globeDiameter >= 700,
+      geometry.globeDiameter >= 640,
       `Globe must be enlarged (diameter ${Math.round(geometry.globeDiameter)}px)`,
     );
     assert.ok(
@@ -165,9 +165,12 @@ try {
           path: process.env.NETWORK_MAP_LANDING_SCREENSHOT,
         });
     }
+    // Leaving the landing page mounts the full app and Mapbox, which takes
+    // ~9-10s under SwiftShader even on main before this change, so 12s was
+    // flaky on CI runners. The wave itself is bounded by MagicRings' deadline.
     await page
       .locator(".nm-landing")
-      .waitFor({ state: "detached", timeout: 12000 });
+      .waitFor({ state: "detached", timeout: 25000 });
     await page
       .locator(".app-wrap")
       .waitFor({ state: "visible", timeout: 20000 });

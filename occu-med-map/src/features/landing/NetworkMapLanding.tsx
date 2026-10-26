@@ -175,6 +175,7 @@ export function NetworkMapLanding({ onEnter }: { onEnter: () => void }) {
                 globeConfig={activeGlobeConfig}
                 data={data}
                 reducedMotion={reducedMotion}
+                paused={entryStarted}
               />
             </Suspense>
           </GlobeBoundary>
