@@ -17,6 +17,7 @@ const ALLOWED_WORKFLOWS = new Set([
   "sync-live-country-registries.yml",
   "sync-europe-dedicated-registries.yml",
   "sync-argentina-refes.yml",
+  "enrich-canada-contacts.yml",
   "sync-brazil-cnes.yml",
   "sync-czechia-nrpzs.yml",
   "sync-finland-ptv.yml",
