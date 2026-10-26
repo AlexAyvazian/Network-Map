@@ -134,8 +134,10 @@ export default function ProviderLayerRegistryPanel() {
         south: String(bounds.getSouth()),
         east: String(bounds.getEast()),
         west: String(bounds.getWest()),
-        // Use the common transport page size. The request runtime auto-paginates
-        // until every matching viewport record has been assembled.
+        // Ask for the whole viewport in one response. The server queries every
+        // Neon database in parallel; limit only applies to older servers, where
+        // the request runtime still auto-paginates.
+        allInView: 'true',
         limit: '2000',
       });
       const response = await fetchProviderLayer(`${definition.endpoint}?${params.toString()}`, { signal: controller.signal });

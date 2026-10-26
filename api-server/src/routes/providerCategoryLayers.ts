@@ -122,13 +122,23 @@ function matchingProjects(definition: CategoryDefinition): ProviderDatabaseProje
   return projects.filter((project) => project.family === definition.family);
 }
 
+// The view only disappears when a database is re-provisioned, so a short-lived
+// cache saves one Neon round trip per project on every toggle. Only a positive
+// probe is cached so a newly created view is picked up immediately.
+const VIEW_PROBE_TTL_MS = 5 * 60_000;
+const viewProbeCache = new Map<string, number>();
+
 async function canonicalViewAvailable(project: ProviderDatabaseProject): Promise<boolean> {
+  const checkedAt = viewProbeCache.get(project.id);
+  if (checkedAt && Date.now() - checkedAt < VIEW_PROBE_TTL_MS) return true;
   const { rows } = await queryWithStatementTimeout(
     project.pool,
     "SELECT to_regclass('public.provider_master_map_view') IS NOT NULL AS ok",
     [],
   );
-  return rows[0]?.ok === true;
+  const ok = rows[0]?.ok === true;
+  if (ok) viewProbeCache.set(project.id, Date.now());
+  return ok;
 }
 
 function categoryWhere(definition: CategoryDefinition, bounds: Bounds | null, params: unknown[]): string {
@@ -192,19 +202,7 @@ async function countProject(project: ProviderDatabaseProject, definition: Catego
   return Number(rows[0]?.total || 0);
 }
 
-async function loadProjectPage(
-  project: ProviderDatabaseProject,
-  definition: CategoryDefinition,
-  bounds: Bounds | null,
-  limit: number,
-  offset: number,
-): Promise<Record<string, unknown>[]> {
-  const params: unknown[] = [];
-  const where = categoryWhere(definition, bounds, params);
-  const limitParam = addParam(params, limit);
-  const offsetParam = addParam(params, offset);
-  const { rows } = await queryWithStatementTimeout(project.pool, `
-    SELECT
+const PROVIDER_COLUMNS = `
       pmv.id,
       pmv.master_key,
       pmv.name,
@@ -220,7 +218,39 @@ async function loadProjectPage(
       pmv.capability_tags,
       pmv.source_key,
       pmv.source_kind,
-      pmv.quality_score
+      pmv.quality_score`;
+
+// One query per project for the whole viewport. Paging with LIMIT/OFFSET made
+// Postgres rescan and re-sort every earlier row on each page and re-ran the
+// count each time, so a 10k-row layer cost several full scans per database.
+async function loadProjectViewport(
+  project: ProviderDatabaseProject,
+  definition: CategoryDefinition,
+  bounds: Bounds | null,
+): Promise<Record<string, unknown>[]> {
+  const params: unknown[] = [];
+  const where = categoryWhere(definition, bounds, params);
+  const { rows } = await queryWithStatementTimeout(project.pool, `
+    SELECT${PROVIDER_COLUMNS}
+    FROM public.provider_master_map_view pmv
+    WHERE ${where}
+  `, params);
+  return rows;
+}
+
+async function loadProjectPage(
+  project: ProviderDatabaseProject,
+  definition: CategoryDefinition,
+  bounds: Bounds | null,
+  limit: number,
+  offset: number,
+): Promise<Record<string, unknown>[]> {
+  const params: unknown[] = [];
+  const where = categoryWhere(definition, bounds, params);
+  const limitParam = addParam(params, limit);
+  const offsetParam = addParam(params, offset);
+  const { rows } = await queryWithStatementTimeout(project.pool, `
+    SELECT${PROVIDER_COLUMNS}
     FROM public.provider_master_map_view pmv
     WHERE ${where}
     ORDER BY pmv.name ASC, pmv.id ASC
@@ -281,6 +311,38 @@ router.get("/provider-category-layers/:category", async (req: Request, res: Resp
     const page = Math.max(Number(req.query.page) || 1, 1);
     const bounds = asBounds(req);
     const warnings: string[] = [];
+
+    if (req.query.allInView === "true") {
+      // Query every provider database at the same time and return the whole
+      // viewport in one response, instead of count + paged queries per page.
+      const results = await Promise.all(matchingProjects(definition).map(async (project) => {
+        try {
+          if (!(await canonicalViewAvailable(project))) throw new Error("canonical provider view is unavailable");
+          return { project, rows: await loadProjectViewport(project, definition, bounds) };
+        } catch (error) {
+          warnings.push(`${project.id}: ${error instanceof Error ? error.message : String(error)}`);
+          return null;
+        }
+      }));
+      const loaded = results.filter((result): result is { project: ProviderDatabaseProject; rows: Record<string, unknown>[] } => Boolean(result));
+      const providers = loaded.flatMap((result) => result.rows.map((row) => toProvider(row, category)));
+      res.json({
+        providers,
+        count: providers.length,
+        loaded: providers.length,
+        total: providers.length,
+        page: 1,
+        limit: providers.length,
+        hasMore: false,
+        allInView: true,
+        category,
+        databaseProjects: loaded.map((result) => result.project.id),
+        partial: warnings.length > 0,
+        ...(warnings.length ? { warnings, warning: warnings.join(" ") } : {}),
+        visibleCapped: false,
+      });
+      return;
+    }
 
     const probes = (
       await Promise.all(matchingProjects(definition).map(async (project) => {
