@@ -1,0 +1,33 @@
+name: Verify Canada Contact Enrichment
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/canada-contact-email-crawl.py"
+      - "scripts/canada-contact-site-discovery.py"
+      - "scripts/tests/test_canada_contact_email_crawl.py"
+      - "scripts/tests/test_canada_contact_site_discovery.py"
+      - "scripts/canada-contact-enrichment.sql"
+      - ".github/workflows/test-canada-contact-enrichment.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/canada-contact-email-crawl.py"
+      - "scripts/canada-contact-site-discovery.py"
+      - "scripts/tests/test_canada_contact_email_crawl.py"
+      - "scripts/tests/test_canada_contact_site_discovery.py"
+      - "scripts/canada-contact-enrichment.sql"
+      - ".github/workflows/test-canada-contact-enrichment.yml"
+permissions:
+  contents: read
+jobs:
+  python-tests:
+    name: Canada enrichment extraction and source matching
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Canada public email and site-discovery tests
+        run: python -m unittest discover -s scripts/tests -p 'test_canada_*.py' -v
